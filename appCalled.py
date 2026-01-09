@@ -21,7 +21,6 @@ service = "Categories"
 infilename = "HNMU"
 jsonKey = "paragraphs"
 jsonField = "Text"
-dropFields = ["Index"]
 
 MODEL_DIR = "Models"
 MODEL_SUMARY = "Summarizer"
@@ -414,30 +413,4 @@ def PrepareData(segmentPath, faissPath, mappingPath, mapDataPath, mapChunkPath, 
         "mapChunk": mapChunk
     }
     
-
-#### SUMMARIZE
-def summarizeDcmt(rawDataDict):
-    mergedText = mergebyText(rawDataDict)
-    summarized = summaryRun(mergedText)
-    return summarized["summaryText"]
-
-
-#### CLASSIFY
-def classifyDocument(summaryText):
-    readedData = ReadData(serviceSegmentPath, serviceFaissPath, serviceMappingPath, serviceMapDataPath, serviceMapChunkPath)
-    serviceSegmentDict = readedData.get("segmentDict")
-    serviceFaissIndex = readedData.get("faissIndex")
-    serviceMapping = readedData.get("mapping")
-    serviceMapData = readedData.get("mapData")
-    serviceMapChunk = readedData.get("mapChunk")
-    
-    searchRes = runSearch(summaryText, serviceFaissIndex, serviceMapping, serviceMapData, serviceMapChunk)
-    reranked = runRerank(summaryText, searchRes)
-    
-    bestCategory = chunkMap(reranked, serviceSegmentDict, dropFields, fields=["Article"], nChunks=1)
-    bestArticles = [item["fields"].get("Article") for item in bestCategory["extractedFields"]]
-    bestArticle = bestArticles[0] if len(bestArticles) == 1 else ", ".join(bestArticles)
-    return bestArticle
-
-
 ## ====================================================================================================

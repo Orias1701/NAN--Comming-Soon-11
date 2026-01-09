@@ -1,6 +1,5 @@
 from . import appCalled
 from Config import Configs
-from Libraries import Faiss_ChunkMapping as chunkMapper
 
 
 ## ==============================
@@ -10,14 +9,7 @@ from Libraries import Faiss_ChunkMapping as chunkMapper
 #### HARD CODE
 service = "Categories"
 infilename = "HNMU"
-jsonKey = "paragraphs"
-jsonField = "Text"
 dropFields = ["Index"]
-
-MODEL_DIR = "Models"
-MODEL_SUMARY = "Summarizer"
-MODEL_ENCODE = "Sentence_Transformer"
-
 
 #### LOAD CONFIG
 config = Configs.ConfigValues(pdfname=infilename, service=service)
@@ -45,27 +37,23 @@ serviceMapDataPath = config["serviceMapDataPath"]
 serviceMapChunkPath = config["serviceMapChunkPath"]
 serviceMetaPath = config["serviceMetaPath"]
 
-DATA_KEY = config["DATA_KEY"]
-EMBE_KEY = config["EMBE_KEY"]
-SEARCH_EGINE = config["SEARCH_EGINE"]
-RERANK_MODEL = config["RERANK_MODEL"]
-RESPON_MODEL = config["RESPON_MODEL"]
-EMBEDD_MODEL = config["EMBEDD_MODEL"]
-CHUNKS_MODEL = config["CHUNKS_MODEL"]
-SUMARY_MODEL = config["SUMARY_MODEL"]
-WORD_LIMIT = config["WORD_LIMIT"]
 
-EMBEDD_CACHED_MODEL = f"{MODEL_DIR}/{MODEL_ENCODE}/{EMBEDD_MODEL}"
-CHUNKS_CACHED_MODEL = F"{MODEL_DIR}/{MODEL_ENCODE}/{CHUNKS_MODEL}"
-SUMARY_CACHED_MODEL = f"{MODEL_DIR}/{MODEL_SUMARY}/{SUMARY_MODEL}"
-
-MAX_INPUT = 1024
-MAX_TARGET = 256
-MIN_TARGET = 64
-TRAIN_EPOCHS = 3
-LEARNING_RATE = 3e-5
-WEIGHT_DECAY = 0.01
-BATCH_SIZE = 4
+#### CLASSIFY
+def classifyDocument(summaryText):
+    readedData = appCalled.ReadData(serviceSegmentPath, serviceFaissPath, serviceMappingPath, serviceMapDataPath, serviceMapChunkPath)
+    serviceSegmentDict = readedData.get("segmentDict")
+    serviceFaissIndex = readedData.get("faissIndex")
+    serviceMapping = readedData.get("mapping")
+    serviceMapData = readedData.get("mapData")
+    serviceMapChunk = readedData.get("mapChunk")
+    
+    searchRes = appCalled.runSearch(summaryText, serviceFaissIndex, serviceMapping, serviceMapData, serviceMapChunk)
+    reranked = appCalled.runRerank(summaryText, searchRes)
+    
+    bestCategory = appCalled.chunkMap(reranked, serviceSegmentDict, dropFields, fields=["Article"], nChunks=1)
+    bestArticles = [item["fields"].get("Article") for item in bestCategory["extractedFields"]]
+    bestArticle = bestArticles[0] if len(bestArticles) == 1 else ", ".join(bestArticles)
+    return bestArticle
 
 
 ## ==============================
@@ -117,6 +105,17 @@ except Exception as e:
 ## API PIPELINE FUNCTIONS
 ## ==============================
 
+def summarizePipeline(rawDataDict):
+    print(f"Summarizing for: '{infilename}'")
+    if not infilename:
+        print("Không thể tóm tắt: File chưa được tải")
+        return []
+
+    mergedText = appCalled.mergebyText(rawDataDict)
+    summarized = appCalled.summaryRun(mergedText)
+    return summarized["summaryText"]
+
+
 def processPdfPipeline(pdf_bytes):
     """
     Pipeline cho endpoint /process_pdf.
@@ -135,7 +134,7 @@ def processPdfPipeline(pdf_bytes):
 
     # 2. Tóm tắt
     print("Summarizing PDF...")
-    summaryText = appCalled.summarizeDcmt(rawDataDict)
+    summaryText = summarizePipeline(rawDataDict)
     
     print("Classifying PDF...")
     if not gServiceFaissIndex:
@@ -158,10 +157,6 @@ def processPdfPipeline(pdf_bytes):
 
 
 def searchPipeline(queryText, k=10):
-    """
-    Pipeline cho endpoint /search.
-    Nhận query -> tìm kiếm trên index chính.
-    """
     print(f"Searching for: '{queryText}'")
     if not gFaissIndex:
         print("Không thể tìm kiếm: Chưa tải index")

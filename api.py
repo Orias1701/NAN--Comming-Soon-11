@@ -153,19 +153,11 @@ def summarizeText(body: SummIn, _=Depends(requireBearer)):
     if not text:
         raise HTTPException(status_code=400, detail="text không được để trống")
 
-    # Lưu ý: tên biến là summaryEngine (không phải summarizer_engine)
     if not appFinal or not hasattr(appFinal, "summaryEngine"):
         raise HTTPException(status_code=500, detail="Không tìm thấy appFinal.summaryEngine.")
 
     try:
-        # Gọi thẳng vào đối tượng summaryEngine
-        summarized = appFinal.summaryEngine.summarize(
-            text, 
-            minInput=body.minInput, 
-            maxInput=body.maxInput,
-            minLength=body.minLength,
-            maxLength=body.maxLength
-        )
+        summarized = appFinal.summarizePipeline(text)
         return {"status": "success", "summary": summarized.get("summaryText", "")}
     except Exception as e:
         print(f"Lỗi /summarize: {e}")
