@@ -1,47 +1,32 @@
 [
     {
-        "Câu hỏi": "Nếu tôi đã hoàn thành đủ tín chỉ theo chương trình đào tạo nhưng điểm trung bình cộng chưa đạt yêu cầu, tôi có được cấp bằng tốt nghiệp không?",
-        "Câu trả lời": "Theo quy chế, sinh viên phải hoàn thành đủ tín chỉ theo chương trình đào tạo và đạt điểm trung bình cộng từ 5.0 trở lên để được cấp bằng tốt nghiệp. Nếu bạn đã hoàn thành đủ tín chỉ nhưng điểm trung bình cộng chưa đạt yêu cầu, bạn cần cải thiện điểm hoặc có thể tham gia các khóa học bổ sung để đạt yêu cầu điểm trung bình cộng tối thiểu.",
-        "Chủ đề": "Điều 1. Phạm vi điều chỉnh và đối tượng áp dụng"
+        "Câu hỏi": "Em có được đăng ký học 120 tín chỉ trong một học kỳ không, theo quy định hiện hành?",
+        "Câu trả lời": "Theo quy chế, khối lượng kiến thức tối thiểu đối với một trình độ đào tạo của giáo dục đại học là 120 tín chỉ, nhưng không xác định rõ số tín chỉ có thể đăng ký trong một học kỳ cụ thể. Bạn nên liên hệ với bộ phận quản lý học tập của trường để có thông tin chính xác.",
+        "Chủ đề": "Đăng ký học tập – tín chỉ – học kỳ"
     },
     {
-        "Câu hỏi": "Nếu tôi muốn thay đổi ngành học trong quá trình học, có điều kiện gì không?",
-        "Câu trả lời": "Theo quy chế, sinh viên có thể chuyển ngành trong quá trình học nếu đáp ứng các điều kiện như đã hoàn thành đủ tín chỉ theo chương trình đào tạo hiện tại, đạt điểm trung bình cộng từ 5.0 trở lên và được sự đồng ý của trường. Bạn cần liên hệ với Phòng Quản lý đào tạo để được hướng dẫn chi tiết về thủ tục chuyển ngành.",
-        "Chủ đề": "Điều 1. Phạm vi điều chỉnh và đối tượng áp dụng"
+        "Câu hỏi": "Nếu tôi tích luỹ đủ 150 tín chỉ cho một ngành có thời gian đào tạo 5 năm, tôi có thể được xếp loại học lực là tốt không?",
+        "Câu trả lời": "Theo quy chế, khi tích luỹ đủ 150 tín chỉ cho một ngành có thời gian đào tạo 5 năm, người học đáp ứng khối lượng kiến thức tối thiểu và có thể được xếp loại học lực tốt.",
+        "Chủ đề": "Đánh giá, chấm điểm, xếp loại học lực"
     },
     {
-        "Câu hỏi": "Em có được đăng ký học phần thay thế nếu đã hoàn thành đủ tín chỉ của học phần đó không?",
-        "Câu trả lời": "Theo quy chế, bạn có thể đăng ký học phần thay thế nếu đã hoàn thành đủ tín chỉ của học phần đó. Tuy nhiên, cần kiểm tra quy định cụ thể của trường về việc đăng ký học phần thay thế để đảm bảo không có bất kỳ điều kiện hoặc hạn chế nào khác.",
-        "Chủ đề": "Điều 1. Phạm vi điều chỉnh và đối tượng áp dụng"
+        "Câu hỏi": "Nếu tôi tích luỹ đủ 150 tín chỉ cho một ngành có thời gian đào tạo 5 năm, tôi có được cấp bằng tốt nghiệp không?",
+        "Câu trả lời": "Theo quy chế, nếu bạn tích luỹ đủ 150 tín chỉ cho một ngành có thời gian đào tạo 5 năm, bạn sẽ được cấp bằng tốt nghiệp.",
+        "Chủ đề": "Điều kiện tốt nghiệp & xếp hạng bằng"
     },
     {
-        "Câu hỏi": "Nếu em đã thi lại môn học nhưng không đạt điểm như mong muốn, thì em có được đăng ký học lại không?",
-        "Câu trả lời": "Theo quy chế, nếu bạn đã thi lại môn học nhưng không đạt điểm như mong muốn, bạn có thể đăng ký học lại. Tuy nhiên, cần kiểm tra quy định cụ thể về điều kiện và quy trình đăng ký học lại để đảm bảo không có bất kỳ điều kiện hoặc hạn chế nào khác.",
-        "Chủ đề": "Điều 1. Phạm vi điều chỉnh và đối tượng áp dụng"
+        "Câu hỏi": "Em có được miễn học môn tiếng Anh vì đã có chứng chỉ ngoại ngữ không?",
+        "Câu trả lời": "Theo quy chế, việc miễn học môn tiếng Anh dựa trên chứng chỉ ngoại ngữ không được quy định cụ thể. Công nhận tín chỉ hoặc chuyển đổi tín chỉ đã tích lũy và miễn trừ học phần trong chương trình đào tạo trước là những phương thức được đề cập, nhưng miễn học môn tiếng Anh dựa trên chứng chỉ ngoại ngữ không được nêu trong quy chế.",
+        "Chủ đề": "Công nhận tín chỉ – miễn học – chứng chỉ ngoại ngữ & tin học"
     },
     {
-        "Câu hỏi": "Nếu tôi đã hoàn thành một học phần nhưng điểm số không đạt yêu cầu, tôi có được miễn học phần này không?",
-        "Câu trả lời": "Theo quy chế, nếu bạn đã hoàn thành một học phần nhưng điểm số không đạt yêu cầu, bạn có thể được miễn học phần đó. Tuy nhiên, điều này cần được phê duyệt bởi Ban Giám hiệu Trường. Bạn nên liên hệ với Phòng Quản lý đào tạo để được hướng dẫn chi tiết về thủ tục và điều kiện miễn học phần.\n\nCăn cứ: Điều 1, Khoản 3 của Quy chế này quy định về việc xây dựng và ban hành các văn bản quy định cụ thể để tổ chức đào tạo trình độ đại học của Trường.",
-        "Chủ đề": "Điều 1. Phạm vi điều chỉnh và đối tượng áp dụng"
+        "Câu hỏi": "Nếu sinh viên hoàn thành khoá học vượt quá 02 lần thời gian được quy định trong kế hoạch học tập chuẩn toàn khoá của từng ngành đào tạo, liệu có bị xử lý gì không?",
+        "Câu trả lời": "Theo quy chế, thời gian tối đa để sinh viên hoàn thành khoá học không vượt quá 02 lần thời gian được quy định trong kế hoạch học tập chuẩn toàn khoá của từng ngành đào tạo. Nếu sinh viên vượt quá thời gian này, quy chế không quy định cụ thể về việc xử lý nhưng có thể sẽ bị xem xét và có thể có các biện pháp kỷ luật hoặc điều chỉnh kế hoạch học tập.",
+        "Chủ đề": "Đánh giá, chấm điểm, xếp loại học lực"
     },
     {
-        "Câu hỏi": "Em có được đăng ký học phần tín chỉ trong học kỳ sau khi đã đăng ký học phần tín chỉ trong học kỳ trước không?",
-        "Câu trả lời": "Theo quy chế, sinh viên có thể đăng ký học phần tín chỉ trong học kỳ sau khi đã đăng ký học phần tín chỉ trong học kỳ trước, miễn là không vượt quá số tín chỉ quy định cho mỗi học kỳ và không vi phạm quy định về số lượng học phần cùng một lúc. Tuy nhiên, cần đảm bảo rằng bạn đã đủ điều kiện về điểm trung bình lớp (ĐTB) và không vượt quá số tín chỉ tối đa cho mỗi học kỳ.",
-        "Chủ đề": "Điều 2. Chương trình đào tạo và thời gian học tập"
-    },
-    {
-        "Câu hỏi": "Nếu em đã đăng ký học phần tín chỉ nhưng không thể tham gia học kỳ này vì lý do sức khỏe, em có được phép bảo lưu học kỳ không?",
-        "Câu trả lời": "Theo quy chế, nếu sinh viên không thể tham gia học kỳ do lý do sức khỏe, họ có thể được bảo lưu học kỳ. Tuy nhiên, cần có giấy tờ chứng minh lý do sức khỏe và tuân thủ quy định về bảo lưu học kỳ của trường. Bạn cần liên hệ với Phòng Quản lý đào tạo để được hướng dẫn cụ thể về thủ tục bảo lưu học kỳ.",
-        "Chủ đề": "Điều 2. Chương trình đào tạo và thời gian học tập"
-    },
-    {
-        "Câu hỏi": "Em đã tốt nghiệp ngành khác và muốn chuyển sang học ngành này, liệu có được không?",
-        "Câu trả lời": "Theo quy chế, nếu bạn đã tốt nghiệp trình độ khác hoặc ngành khác, khối lượng học tập thực tế được xác định trên cơ sở công nhận kết quả học tập hoặc chuyển đổi tín chỉ đã tích lũy. Tuy nhiên, bạn cần liên hệ với Phòng Quản lý đào tạo để được hướng dẫn cụ thể về việc chuyển ngành và điều kiện cần thiết.",
-        "Chủ đề": "Điều 2. Chương trình đào tạo và thời gian học tập"
-    },
-    {
-        "Câu hỏi": "Nếu tôi đã hoàn thành một học phần nhưng không đạt điểm đủ để được tín chỉ, có được miễn học không?",
-        "Câu trả lời": "Theo quy chế, nếu bạn đã hoàn thành một học phần nhưng không đạt điểm đủ để được tín chỉ, bạn không được miễn học. Điều này được quy định tại Khoản 3 Điều 2, Chương I của Quy chế. Bạn cần hoàn thành học phần đó theo chương trình đào tạo hiện hành.",
-        "Chủ đề": "Điều 2. Chương trình đào tạo và thời gian học tập"
+        "Câu hỏi": "Em có được đăng ký học tập theo từng học kỳ và tích lũy tín chỉ cho từng học phần không?",
+        "Câu trả lời": "Theo quy chế, sinh viên được phép đăng ký học tập theo từng học kỳ và tích lũy tín chỉ cho từng học phần, phù hợp với kế hoạch học tập cá nhân và kế hoạch giảng dạy của Trường.",
+        "Chủ đề": "Đăng ký học tập – tín chỉ – học kỳ"
     }
 ]

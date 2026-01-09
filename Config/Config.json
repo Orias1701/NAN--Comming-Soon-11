@@ -16,8 +16,8 @@
   "models": {
     "responding_model": {
       "publisher": "bartowski",
-      "model_name": "Llama-3.2-3B-Instruct-GGUF",      
-      "model_file": "Llama-3.2-3B-Instruct-Q6_K_L.gguf"
+      "model_name": "Qwen2.5-3B-Instruct-GGUF",      
+      "model_file": "Qwen2.5-3B-Instruct-Q6_K_L.gguf"
     }
   },
   "dataset-en": {
