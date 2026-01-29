@@ -445,7 +445,7 @@ def classifyDocument(summaryText):
     searchRes = runSearch(summaryText, serviceFaissIndex, serviceMapping, serviceMapData, serviceMapChunk)
     reranked = runRerank(summaryText, searchRes)
     
-    bestCategory = chunkMapper.processChunksPipeline(rerankedResults=reranked, segmentDict=serviceSegmentDict, dropFields=["Index"], fields=["Article"], nChunks=1)
+    bestCategory = chunkMapper.processChunksPipeline(reranked=reranked, segmentDict=serviceSegmentDict, dropFields=["Index"], fields=["Article"], nChunks=1)
     bestArticles = [item["fields"].get("Article") for item in bestCategory["extractedFields"]]
     bestArticle = bestArticles[0] if len(bestArticles) == 1 else ", ".join(bestArticles)
     return bestArticle
@@ -528,7 +528,7 @@ def processPdfPipeline(pdf_bytes):
         reranked = runRerank(summaryText, searchRes)
         
         bestCategory = chunkMapper.processChunksPipeline(
-            rerankedResults=reranked, 
+            reranked=reranked, 
             segmentDict=gServiceSegmentDict, 
             dropFields=["Index"], 
             fields=["Article"], 
@@ -559,7 +559,7 @@ def searchPipeline(queryText, k=10):
     reranked = runRerank(queryText, searchRes)
 
     chunkReturn = chunkMapper.processChunksPipeline(
-        rerankedResults=reranked,
+        reranked=reranked,
         segmentDict=gSegmentDict,
         dropFields=["Index"],
         fields=None,
