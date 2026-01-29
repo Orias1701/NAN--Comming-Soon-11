@@ -10,17 +10,16 @@ class PDFQualityChecker:
     """
 
     def __init__(self, 
-                 max_invalid_ratio: float = 0.2,
-                 max_whitespace_ratio: float = 0.2,
-                 max_short_line_ratio: float = 0.3,
-                 min_total_chars: int = 300):
-        self.max_invalid_ratio = max_invalid_ratio
-        self.max_whitespace_ratio = max_whitespace_ratio
-        self.max_short_line_ratio = max_short_line_ratio
-        self.min_total_chars = min_total_chars
+                 maxInvalidRatio: float = 0.2,
+                 maxWhitespaceRatio: float = 0.2,
+                 maxShortLineRatio: float = 0.3,
+                 minTotalChars: int = 300):
+        self.maxInvalidRatio = maxInvalidRatio
+        self.maxWhitespaceRatio = maxWhitespaceRatio
+        self.maxShortLineRatio = maxShortLineRatio
+        self.minTotalChars = minTotalChars
 
-        # Regex nhận diện ký tự hợp lệ (chữ, số, dấu tiếng Việt, ký hiệu cơ bản)
-        self.valid_char_pattern = re.compile(r"[A-Za-zÀ-ỹĐđ0-9.,:;!?()\"'’”“–\-_\s]")
+        self.validCharPattern = re.compile(r"[A-Za-zÀ-ỹĐđ0-9.,:;!?()\"''""–\-_\s]")
 
     # ============================================================
     # 1️⃣  HÀM CHÍNH
@@ -29,23 +28,21 @@ class PDFQualityChecker:
         """
         Đánh giá chất lượng PDF.
         - pdf: đường dẫn (str) hoặc fitz.Document đã mở
-        - trả (is_good, metrics)
+        - trả (isGood, metrics)
         """
-        # ---- Chuẩn hóa input ----
         if isinstance(pdf, str):
             try:
                 doc = fitz.open(pdf)
             except Exception as e:
-                return False, {"check_mess": f"❌ Không mở được file: {e}"}
+                return False, {"checkMess": f"❌ Không mở được file: {e}"}
         elif isinstance(pdf, fitz.Document):
             doc = pdf
         else:
             raise TypeError("pdf phải là str hoặc fitz.Document")
 
-        # ---- Bắt đầu thống kê ----
-        text_all = ""
-        short_lines = 0
-        all_lines = 0
+        textAll = ""
+        shortLines = 0
+        allLines = 0
 
         for page in doc:
             text = page.get_text("text") or ""
@@ -55,52 +52,50 @@ class PDFQualityChecker:
             for line in lines:
                 if not line.strip():
                     continue
-                all_lines += 1
+                allLines += 1
                 if len(line.strip()) < 10:
-                    short_lines += 1
-            text_all += text + "\n"
+                    shortLines += 1
+            textAll += text + "\n"
 
-        total_chars = len(text_all)
-        if total_chars < self.min_total_chars:
+        totalChars = len(textAll)
+        if totalChars < self.minTotalChars:
             return False, {
-                "check_mess": "❌ File quá ngắn hoặc không có text layer",
-                "total_chars": total_chars,
+                "checkMess": "❌ File quá ngắn hoặc không có text layer",
+                "totalChars": totalChars,
             }
 
-        # ---- Tính tỷ lệ lỗi ----
-        valid_chars = sum(1 for ch in text_all if self.valid_char_pattern.match(ch))
-        invalid_chars = total_chars - valid_chars
-        invalid_ratio = invalid_chars / total_chars
+        validChars = sum(1 for ch in textAll if self.validCharPattern.match(ch))
+        invalidChars = totalChars - validChars
+        invalidRatio = invalidChars / totalChars
 
-        whitespace_excess = len(re.findall(r" {3,}", text_all))
-        whitespace_ratio = whitespace_excess / total_chars
+        whitespaceExcess = len(re.findall(r" {3,}", textAll))
+        whitespaceRatio = whitespaceExcess / totalChars
 
-        short_line_ratio = short_lines / max(all_lines, 1)
+        shortLineRatio = shortLines / max(allLines, 1)
 
-        # ---- Đưa ra kết luận ----
-        is_good = (
-            invalid_ratio <= self.max_invalid_ratio
-            and whitespace_ratio <= self.max_whitespace_ratio
-            and short_line_ratio <= self.max_short_line_ratio
+        isGood = (
+            invalidRatio <= self.maxInvalidRatio
+            and whitespaceRatio <= self.maxWhitespaceRatio
+            and shortLineRatio <= self.maxShortLineRatio
         )
 
-        if not is_good:
-            if invalid_ratio > self.max_invalid_ratio:
-                check_mess = "❌ Nhiều ký tự lỗi / encode sai"
-            elif whitespace_ratio > self.max_whitespace_ratio:
-                check_mess = "❌ Nhiều khoảng trắng thừa"
-            elif short_line_ratio > self.max_short_line_ratio:
-                check_mess = "⚠️ OCR hoặc mất ký tự"
+        if not isGood:
+            if invalidRatio > self.maxInvalidRatio:
+                checkMess = "❌ Nhiều ký tự lỗi / encode sai"
+            elif whitespaceRatio > self.maxWhitespaceRatio:
+                checkMess = "❌ Nhiều khoảng trắng thừa"
+            elif shortLineRatio > self.maxShortLineRatio:
+                checkMess = "⚠️ OCR hoặc mất ký tự"
             else:
-                check_mess = "❌ Văn bản lỗi nặng"
+                checkMess = "❌ Văn bản lỗi nặng"
         else:
-            check_mess = "✅ Đạt yêu cầu"
+            checkMess = "✅ Đạt yêu cầu"
 
         metrics = {
-            "check_mess": check_mess,
-            "total_chars": total_chars,
-            "invalid_ratio": round(invalid_ratio, 3),
-            "whitespace_ratio": round(whitespace_ratio, 3),
-            "short_line_ratio": round(short_line_ratio, 3),
+            "checkMess": checkMess,
+            "totalChars": totalChars,
+            "invalidRatio": round(invalidRatio, 3),
+            "whitespaceRatio": round(whitespaceRatio, 3),
+            "shortLineRatio": round(shortLineRatio, 3),
         }
-        return is_good, metrics
+        return isGood, metrics

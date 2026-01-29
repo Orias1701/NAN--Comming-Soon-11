@@ -27,48 +27,48 @@ class SummarizationTrainer:
 
     def __init__(
         self,
-        Max_Input_Length: int = 1024,
-        Max_Target_Length: int = 256,
+        maxInputLength: int = 1024,
+        maxTargetLength: int = 256,
         prefix: str = "",
-        input_column: str = "article",
-        target_column: str = "summary",
-        Learning_Rate: float = 3e-5,
-        Weight_Decay: float = 0.01,
-        Batch_Size: int = 8,
-        Num_Train_Epochs: int = 3,
-        gradient_accumulation_steps: int = 1,
-        warmup_ratio: float = 0.05,
-        lr_scheduler_type: str = "linear",
+        inputColumn: str = "article",
+        targetColumn: str = "summary",
+        learningRate: float = 3e-5,
+        weightDecay: float = 0.01,
+        batchSize: int = 8,
+        numTrainEpochs: int = 3,
+        gradientAccumulationSteps: int = 1,
+        warmupRatio: float = 0.05,
+        lrSchedulerType: str = "linear",
         seed: int = 42,
-        num_beams: int = 4,
-        generation_max_length: Optional[int] = None,
+        numBeams: int = 4,
+        generationMaxLength: Optional[int] = None,
         fp16: bool = True,
-        early_stopping_patience: int = 2,
-        logging_steps: int = 200,
-        report_to: str = "none",
+        earlyStoppingPatience: int = 2,
+        loggingSteps: int = 200,
+        reportTo: str = "none",
     ):
         # Hyperparams
-        self.Max_Input_Length = Max_Input_Length
-        self.Max_Target_Length = Max_Target_Length
+        self.maxInputLength = maxInputLength
+        self.maxTargetLength = maxTargetLength
         self.prefix = prefix
-        self.input_column = input_column
-        self.target_column = target_column
+        self.inputColumn = inputColumn
+        self.targetColumn = targetColumn
 
-        self.Learning_Rate = Learning_Rate
-        self.Weight_Decay = Weight_Decay
-        self.Batch_Size = Batch_Size
-        self.Num_Train_Epochs = Num_Train_Epochs
-        self.gradient_accumulation_steps = gradient_accumulation_steps
-        self.warmup_ratio = warmup_ratio
-        self.lr_scheduler_type = lr_scheduler_type
+        self.learningRate = learningRate
+        self.weightDecay = weightDecay
+        self.batchSize = batchSize
+        self.numTrainEpochs = numTrainEpochs
+        self.gradientAccumulationSteps = gradientAccumulationSteps
+        self.warmupRatio = warmupRatio
+        self.lrSchedulerType = lrSchedulerType
         self.seed = seed
 
-        self.num_beams = num_beams
-        self.generation_max_length = generation_max_length
+        self.numBeams = numBeams
+        self.generationMaxLength = generationMaxLength
         self.fp16 = fp16
-        self.early_stopping_patience = early_stopping_patience
-        self.logging_steps = logging_steps
-        self.report_to = report_to
+        self.earlyStoppingPatience = earlyStoppingPatience
+        self.loggingSteps = loggingSteps
+        self.reportTo = reportTo
 
         self._rouge = evaluate.load("rouge")
         self._tokenizer = None
@@ -77,29 +77,29 @@ class SummarizationTrainer:
     # =========================================================
     # 1️⃣  Đọc dữ liệu JSONL hoặc Arrow
     # =========================================================
-    def _load_jsonl_to_datasetdict(self, DataPath: str) -> DatasetDict:
-        print(f"Đang tải dữ liệu từ {DataPath} ...")
-        data_list = []
-        with open(DataPath, "r", encoding="utf-8") as f:
+    def _loadJsonlToDatasetdict(self, dataPath: str) -> DatasetDict:
+        print(f"Đang tải dữ liệu từ {dataPath} ...")
+        dataList = []
+        with open(dataPath, "r", encoding="utf-8") as f:
             for line in f:
                 if not line.strip():
                     continue
                 try:
-                    data_list.append(json.loads(line))
+                    dataList.append(json.loads(line))
                 except json.JSONDecodeError:
                     continue
 
-        df = pd.DataFrame(data_list)
-        if self.input_column not in df or self.target_column not in df:
-            raise ValueError(f"File {DataPath} thiếu cột {self.input_column}/{self.target_column}")
-        df = df[[self.input_column, self.target_column]].dropna()
+        df = pd.DataFrame(dataList)
+        if self.inputColumn not in df or self.targetColumn not in df:
+            raise ValueError(f"File {dataPath} thiếu cột {self.inputColumn}/{self.targetColumn}")
+        df = df[[self.inputColumn, self.targetColumn]].dropna()
 
         dataset = Dataset.from_pandas(df, preserve_index=False)
         split = dataset.train_test_split(test_size=0.1, seed=self.seed)
         print(f"✔ Dữ liệu chia: {len(split['train'])} train / {len(split['test'])} validation")
         return DatasetDict({"train": split["train"], "validation": split["test"]})
 
-    def _ensure_datasetdict(self, dataset: Optional[Union[Dataset, DatasetDict]], DataPath: Optional[str]) -> DatasetDict:
+    def _ensureDatasetdict(self, dataset: Optional[Union[Dataset, DatasetDict]], dataPath: Optional[str]) -> DatasetDict:
         if dataset is not None:
             if isinstance(dataset, DatasetDict):
                 return dataset
@@ -107,35 +107,35 @@ class SummarizationTrainer:
                 split = dataset.train_test_split(test_size=0.1, seed=self.seed)
                 return DatasetDict({"train": split["train"], "validation": split["test"]})
             raise TypeError("dataset phải là datasets.Dataset hoặc datasets.DatasetDict.")
-        if DataPath:
-            if os.path.isdir(DataPath):
-                print(f"Load DatasetDict từ thư mục Arrow: {DataPath}")
-                return load_from_disk(DataPath)
-            return self._load_jsonl_to_datasetdict(DataPath)
-        raise ValueError("Cần truyền dataset hoặc DataPath")
+        if dataPath:
+            if os.path.isdir(dataPath):
+                print(f"Load DatasetDict từ thư mục Arrow: {dataPath}")
+                return load_from_disk(dataPath)
+            return self._loadJsonlToDatasetdict(dataPath)
+        raise ValueError("Cần truyền dataset hoặc dataPath")
 
     # =========================================================
     # 2️⃣  Token hóa
     # =========================================================
-    def _preprocess_function(self, examples):
-        inputs = examples[self.input_column]
+    def _preprocessFunction(self, examples):
+        inputs = examples[self.inputColumn]
         if self.prefix:
             inputs = [self.prefix + x for x in inputs]
-        model_inputs = self._tokenizer(inputs, max_length=self.Max_Input_Length, truncation=True)
+        modelInputs = self._tokenizer(inputs, maxLength=self.maxInputLength, truncation=True)
         with self._tokenizer.as_target_tokenizer():
-            labels = self._tokenizer(examples[self.target_column], max_length=self.Max_Target_Length, truncation=True)
-        model_inputs["labels"] = labels["input_ids"]
-        return model_inputs
+            labels = self._tokenizer(examples[self.targetColumn], maxLength=self.maxTargetLength, truncation=True)
+        modelInputs["labels"] = labels["input_ids"]
+        return modelInputs
 
     # =========================================================
     # 3️⃣  Tính điểm ROUGE
     # =========================================================
-    def _compute_metrics(self, eval_pred):
-        preds, labels = eval_pred
-        decoded_preds = self._tokenizer.batch_decode(preds, skip_special_tokens=True)
+    def _computeMetrics(self, evalPred):
+        preds, labels = evalPred
+        decodedPreds = self._tokenizer.batch_decode(preds, skip_special_tokens=True)
         labels = np.where(labels != -100, labels, self._tokenizer.pad_token_id)
-        decoded_labels = self._tokenizer.batch_decode(labels, skip_special_tokens=True)
-        result = self._rouge.compute(predictions=decoded_preds, references=decoded_labels, use_stemmer=True)
+        decodedLabels = self._tokenizer.batch_decode(labels, skip_special_tokens=True)
+        result = self._rouge.compute(predictions=decodedPreds, references=decodedLabels, use_stemmer=True)
         return {k: round(v * 100, 4) for k, v in result.items()}
 
     # =========================================================
@@ -143,81 +143,81 @@ class SummarizationTrainer:
     # =========================================================
     def run(
         self,
-        Checkpoint: str,
-        ModelPath: str,
-        DataPath: Optional[str] = None,
+        checkpoint: str,
+        modelPath: str,
+        dataPath: Optional[str] = None,
         dataset: Optional[Union[Dataset, DatasetDict]] = None,
         tokenizer: Optional[AutoTokenizer] = None,
     ):
         set_seed(self.seed)
-        ds = self._ensure_datasetdict(dataset, DataPath)
-        self._tokenizer = tokenizer or AutoTokenizer.from_pretrained(Checkpoint)
-        print(f"Tải model checkpoint: {Checkpoint}")
-        self._model = AutoModelForSeq2SeqLM.from_pretrained(Checkpoint)
+        ds = self._ensureDatasetdict(dataset, dataPath)
+        self._tokenizer = tokenizer or AutoTokenizer.from_pretrained(checkpoint)
+        print(f"Tải model checkpoint: {checkpoint}")
+        self._model = AutoModelForSeq2SeqLM.from_pretrained(checkpoint)
 
         print("Tokenizing dữ liệu ...")
-        tokenized = ds.map(self._preprocess_function, batched=True)
-        data_collator = DataCollatorForSeq2Seq(tokenizer=self._tokenizer, model=self._model)
-        gen_max_len = self.generation_max_length or self.Max_Target_Length
+        tokenized = ds.map(self._preprocessFunction, batched=True)
+        dataCollator = DataCollatorForSeq2Seq(tokenizer=self._tokenizer, model=self._model)
+        genMaxLen = self.generationMaxLength or self.maxTargetLength
 
-        training_args = Seq2SeqTrainingArguments(
-            output_dir=ModelPath,
+        trainingArgs = Seq2SeqTrainingArguments(
+            output_dir=modelPath,
             evaluation_strategy="epoch",
             save_strategy="epoch",
-            learning_rate=self.Learning_Rate,
-            per_device_train_batch_size=self.Batch_Size,
-            per_device_eval_batch_size=self.Batch_Size,
-            weight_decay=self.Weight_Decay,
-            num_train_epochs=self.Num_Train_Epochs,
+            learning_rate=self.learningRate,
+            per_device_train_batch_size=self.batchSize,
+            per_device_eval_batch_size=self.batchSize,
+            weight_decay=self.weightDecay,
+            num_train_epochs=self.numTrainEpochs,
             predict_with_generate=True,
-            generation_max_length=gen_max_len,
-            generation_num_beams=self.num_beams,
+            generation_max_length=genMaxLen,
+            generation_num_beams=self.numBeams,
             fp16=self.fp16,
-            gradient_accumulation_steps=self.gradient_accumulation_steps,
-            warmup_ratio=self.warmup_ratio,
-            lr_scheduler_type=self.lr_scheduler_type,
-            logging_steps=self.logging_steps,
+            gradient_accumulation_steps=self.gradientAccumulationSteps,
+            warmup_ratio=self.warmupRatio,
+            lr_scheduler_type=self.lrSchedulerType,
+            logging_steps=self.loggingSteps,
             load_best_model_at_end=True,
             metric_for_best_model="rougeL",
             greater_is_better=True,
             save_total_limit=3,
-            report_to=self.report_to,
+            report_to=self.reportTo,
         )
 
         trainer = Seq2SeqTrainer(
             model=self._model,
-            args=training_args,
+            args=trainingArgs,
             train_dataset=tokenized["train"],
             eval_dataset=tokenized["validation"],
             tokenizer=self._tokenizer,
-            data_collator=data_collator,
-            compute_metrics=self._compute_metrics,
-            callbacks=[EarlyStoppingCallback(early_stopping_patience=self.early_stopping_patience)],
+            data_collator=dataCollator,
+            compute_metrics=self._computeMetrics,
+            callbacks=[EarlyStoppingCallback(early_stopping_patience=self.earlyStoppingPatience)],
         )
 
         print("\n🚀 BẮT ĐẦU HUẤN LUYỆN ...")
         trainer.train()
         print("✅ HUẤN LUYỆN HOÀN TẤT.")
-        trainer.save_model(ModelPath)
-        self._tokenizer.save_pretrained(ModelPath)
-        print(f"💾 Đã lưu model & tokenizer tại: {ModelPath}")
+        trainer.save_model(modelPath)
+        self._tokenizer.save_pretrained(modelPath)
+        print(f"💾 Đã lưu model & tokenizer tại: {modelPath}")
         return trainer
 
     # =========================================================
     # 5️⃣  Sinh tóm tắt
     # =========================================================
-    def generate(self, text: str, max_new_tokens: Optional[int] = None) -> str:
+    def generate(self, text: str, maxNewTokens: Optional[int] = None) -> str:
         if self._model is None or self._tokenizer is None:
             raise RuntimeError("Model/tokenizer chưa khởi tạo, hãy gọi run() trước.")
         prompt = (self.prefix + text) if self.prefix else text
-        inputs = self._tokenizer(prompt, return_tensors="pt", truncation=True, max_length=self.Max_Input_Length)
-        gen_len = max_new_tokens or self.Max_Target_Length
-        outputs = self._model.generate(**inputs, max_new_tokens=gen_len, num_beams=self.num_beams)
+        inputs = self._tokenizer(prompt, return_tensors="pt", truncation=True, maxLength=self.maxInputLength)
+        genLen = maxNewTokens or self.maxTargetLength
+        outputs = self._model.generate(**inputs, maxNewTokens=genLen, numBeams=self.numBeams)
         return self._tokenizer.decode(outputs[0], skip_special_tokens=True)
 
     # =========================================================
     # 6️⃣  Load lại Dataset Arrow
     # =========================================================
     @staticmethod
-    def load_local_dataset(DataPath: str) -> DatasetDict:
-        return load_from_disk(DataPath)
+    def loadLocalDataset(dataPath: str) -> DatasetDict:
+        return load_from_disk(dataPath)

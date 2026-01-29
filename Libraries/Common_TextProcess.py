@@ -93,9 +93,9 @@ def stripExtraSpaces(s: str) -> str:
         return s
     return re.sub(r'\s+', ' ', s).strip()
 
-def mergeTxt(RawDataDict, JsonKey, JsonField):
+def mergeTxt(rawDataDict, jsonKey, jsonField):
     """Hợp nhất text từ dữ liệu."""
-    paragraphs = RawDataDict.get(JsonKey, [])
-    merged = "\n".join(p.get(JsonField, "").strip() for p in paragraphs if p.get(JsonField))
+    paragraphs = rawDataDict.get(jsonKey, [])
+    merged = "\n".join(p.get(jsonField, "").strip() for p in paragraphs if p.get(jsonField))
     merged = re.sub(r"\n{2,}", "\n", merged.strip())
     return merged

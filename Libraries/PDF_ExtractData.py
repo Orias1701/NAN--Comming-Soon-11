@@ -11,10 +11,9 @@ from . import Common_PdfProcess as PdfProcess
 # ===============================
 class U1_Utils:
 
-    # ===== Proper Name =====
     @staticmethod
-    def collect_proper_names(lines, min_count=10):
-        title_words = []
+    def collectProperNames(lines, minCount=10):
+        titleWords = []
 
         for line in lines:
             text = line.get("Text", "")
@@ -22,89 +21,85 @@ class U1_Utils:
             if not words:
                 continue
 
-            # Bỏ qua từ đầu tiên
             for w in words[1:]:
                 if w.istitle():
-                    clean_w = TextProcess.normalizeWord(w)
-                    if clean_w:
-                        title_words.append(clean_w)
+                    cleanW = TextProcess.normalizeWord(w)
+                    if cleanW:
+                        titleWords.append(cleanW)
 
-        counter = Counter(title_words)
-        proper_names = {TextProcess.normalizeWord(w) for w, cnt in counter.items() if cnt >= min_count}
-        return proper_names
+        counter = Counter(titleWords)
+        properNames = {TextProcess.normalizeWord(w) for w, cnt in counter.items() if cnt >= minCount}
+        return properNames
 
     @staticmethod
-    def extract_marker(text, patterns):
-        for pattern_info in patterns["markers"]:
-            match = pattern_info["pattern"].match(text)
+    def extractMarker(text, patterns):
+        for patternInfo in patterns["markers"]:
+            match = patternInfo["pattern"].match(text)
             if match:
-                marker_text = re.sub(r'^\s+', '', match.group(0))
-                marker_text = re.sub(r'\s+$', ' ', marker_text)
-                return {"marker_text": marker_text}
-        return {"marker_text": None}
+                markerText = re.sub(r'^\s+', '', match.group(0))
+                markerText = re.sub(r'\s+$', ' ', markerText)
+                return {"markerText": markerText}
+        return {"markerText": None}
 
     @staticmethod
-    def format_marker(marker_text, patterns):
+    def formatMarker(markerText, patterns):
         """
         Chuẩn hoá MarkerText
         """
-        if not marker_text:
+        if not markerText:
             return None
 
-        formatted = marker_text
+        formatted = markerText
         formatted = re.sub(r'\b[0-9]+\b', '123', formatted)
         formatted = re.sub(r'\b[IVXLC]+\b', 'XVI', formatted)
 
         parts = re.split(r'(\W+)', formatted)
-        formatted_parts = []
+        formattedParts = []
         for part in parts:
             if re.match(r'(\W+)', part):
-                formatted_parts.append(part)
+                formattedParts.append(part)
                 continue
             if part.lower() in patterns["keywords_set"]:
-                formatted_parts.append(part)
+                formattedParts.append(part)
             elif re.match(r'^[a-z]$', part) or re.match(r'^[a-zđêôơư]$', part):
-                formatted_parts.append('abc')
+                formattedParts.append('abc')
             elif re.match(r'^[A-Z]$', part) or re.match(r'^[A-ZĐÊÔƠƯ]$', part):
-                formatted_parts.append('ABC')
+                formattedParts.append('ABC')
             else:
-                formatted_parts.append(part)
-        return ''.join(formatted_parts)
+                formattedParts.append(part)
+        return ''.join(formattedParts)
 
-    # ===== Hàm chuẩn hoá số La Mã =====
     @staticmethod
-    def normalizeRomans(lines, mode="marker", replace_with="ABC"):
-        format_groups = defaultdict(list)
+    def normalizeRomans(lines, mode="marker", replaceWith="ABC"):
+        formatGroups = defaultdict(list)
         for idx, line in enumerate(lines):
             fmt = line.get("MarkerType")
             marker = line.get("MarkerText")
             if fmt and marker:
-                format_groups[fmt].append((idx, marker))
+                formatGroups[fmt].append((idx, marker))
 
-        # --- kiểm tra MarkerType ---
         if mode == "marker":
-            for fmt, group in format_groups.items():
-                roman_markers = []
+            for fmt, group in formatGroups.items():
+                romanMarkers = []
                 for idx, marker in group:
                     m = re.search(r'\b([IVXLC]+)\b', marker)
                     if m and TextProcess.isRoman(m.group(1)):
-                        roman_markers.append((idx, m.group(1)))
+                        romanMarkers.append((idx, m.group(1)))
                     else:
                         break
 
-                if roman_markers:
-                    roman_numbers = [TextProcess.romanToInt(rm[1]) for rm in roman_markers]
-                    expected = list(range(min(roman_numbers), max(roman_numbers) + 1))
-                    if sorted(roman_numbers) != expected:
-                        for idx, _ in roman_markers:
-                            lines[idx]["MarkerType"] = re.sub(r'\b[IVXLC]+\b', replace_with, lines[idx]["MarkerType"])
+                if romanMarkers:
+                    romanNumbers = [TextProcess.romanToInt(rm[1]) for rm in romanMarkers]
+                    expected = list(range(min(romanNumbers), max(romanNumbers) + 1))
+                    if sorted(romanNumbers) != expected:
+                        for idx, _ in romanMarkers:
+                            lines[idx]["MarkerType"] = re.sub(r'\b[IVXLC]+\b', replaceWith, lines[idx]["MarkerType"])
 
-        # --- Chuẩn hoá toàn bộ Text/MarkerText ---
         elif mode == "text":
             for line in lines:
                 for key in ["Text", "MarkerText", "MarkerType"]:
                     if line.get(key):
-                        line[key] = re.sub(r'\b[IVXLC]+\b', replace_with, line[key])
+                        line[key] = re.sub(r'\b[IVXLC]+\b', replaceWith, line[key])
 
         return lines
 
@@ -114,9 +109,9 @@ class U1_Utils:
 # ===============================
 class U2_Word:
     @staticmethod
-    def caseStyle(word_text: str) -> int:
+    def caseStyle(wordText: str) -> int:
         """CaseStyle cho từ: 3000 (UPPER), 2000 (Title), 1000 (khác)"""
-        clean = re.sub(r'[^A-Za-zÀ-ỹà-ỹ0-9]', '', word_text)
+        clean = re.sub(r'[^A-Za-zÀ-ỹà-ỹ0-9]', '', wordText)
         if clean and clean.isupper():
             return 3000
         if clean and clean.istitle():
@@ -124,9 +119,9 @@ class U2_Word:
         return 1000
 
     @staticmethod
-    def buildStyle(word_text, span):
+    def buildStyle(wordText, span):
         """Style gộp = CaseStyle + FontStyle (100,10,1)"""
-        cs = U2_Word.caseStyle(word_text)
+        cs = U2_Word.caseStyle(wordText)
         b, i, u = PdfProcess.fontFlags(span)
         fs = (100 if b else 0) + (10 if i else 0) + (1 if u else 0)
         return cs + fs
@@ -163,40 +158,37 @@ class U3_Line:
         words = line.get("words", [])
         spans = line.get("spans", [])
 
-        # Gom exceptions
-        exception_texts = set()
+        exceptionTexts = set()
         if exceptions:
-            exception_texts = (
+            exceptionTexts = (
                 set(exceptions.get("common_words", [])) |
                 set(exceptions.get("proper_names", [])) |
                 set(exceptions.get("abbreviations", []))
             )
 
-        # ===== CaseStyle =====
-        cs_values = []
+        csValues = []
         for w, _ in words:
-            clean_w = TextProcess.normalizeWord(w)
-            if not clean_w:
+            cleanW = TextProcess.normalizeWord(w)
+            if not cleanW:
                 continue
-            if clean_w in exception_texts or TextProcess.isAbbreviation(clean_w):
+            if cleanW in exceptionTexts or TextProcess.isAbbreviation(cleanW):
                 continue
-            cs_values.append(U2_Word.caseStyle(clean_w))
+            csValues.append(U2_Word.caseStyle(cleanW))
 
-        cs_line = min(cs_values) if cs_values else 1000
+        csLine = min(csValues) if csValues else 1000
 
-        # ===== FontStyle =====
         if spans:
-            bold_all = italic_all = underline_all = True
+            boldAll = italicAll = underlineAll = True
             for s in spans:
                 b, i, u = PdfProcess.fontFlags(s)
-                bold_all &= b
-                italic_all &= i
-                underline_all &= u
-            fs_line = (100 if bold_all else 0) + (10 if italic_all else 0) + (1 if underline_all else 0)
+                boldAll &= b
+                italicAll &= i
+                underlineAll &= u
+            fsLine = (100 if boldAll else 0) + (10 if italicAll else 0) + (1 if underlineAll else 0)
         else:
-            fs_line = 0
+            fsLine = 0
 
-        return cs_line + fs_line
+        return csLine + fsLine
 
 
 # ===============================
@@ -238,14 +230,13 @@ class U4_Compat:
 class U5_MarkerStyle:
     @staticmethod
     def getMarker(text, patterns):
-        info = U1_Utils.extract_marker(text, patterns)
-        marker_text = info.get("marker_text")
-        marker_type = None
-        if marker_text:
-            # Giữ sửa lỗi xử lý dấu '+'
-            marker_text_cleaned = re.sub(r'([A-Za-z0-9ĐÊÔƠƯđêôơư])\+(?=\W|$)', r'\1', marker_text)
-            marker_type = U1_Utils.format_marker(marker_text_cleaned, patterns)
-        return marker_text, marker_type
+        info = U1_Utils.extractMarker(text, patterns)
+        markerText = info.get("markerText")
+        markerType = None
+        if markerText:
+            markerTextCleaned = re.sub(r'([A-Za-z0-9ĐÊÔƠƯđêôơư])\+(?=\W|$)', r'\1', markerText)
+            markerType = U1_Utils.formatMarker(markerTextCleaned, patterns)
+        return markerText, markerType
 
     @staticmethod
     def getFontSize(line):
@@ -269,45 +260,42 @@ class U5_MarkerStyle:
 # ===============================
 class U6_Document:
     @staticmethod
-    def getTextStatus(pdf_doc, exceptions, patterns):
-        doc = pdf_doc
+    def getTextStatus(pdfDoc, exceptions, patterns):
+        doc = pdfDoc
         general = {"pageGeneralSize": U3_Line.getPageGeneralSize(doc[0])}
         lines = []
         for i, page in enumerate(doc):
-            text_dict = page.get_text("dict")
-            for block in text_dict["blocks"]:
+            textDict = page.get_text("dict")
+            for block in textDict["blocks"]:
                 if "lines" in block:
                     for l in block["lines"]:
                         text = "".join(span["text"] for span in l["spans"]).strip()
                         if not text:
                             continue
 
-                        # Marker
-                        marker_text, marker_type = U5_MarkerStyle.getMarker(text, patterns)
+                        markerText, markerType = U5_MarkerStyle.getMarker(text, patterns)
 
-                        # Style/FontSize/Coord
-                        line_obj = {"text": text, "spans": l["spans"]}
-                        style = U3_Line.getLineStyle(line_obj)
-                        fontsize = PdfProcess.getLineFontSize(line_obj)
-                        x0, x1, xm, y0, y1 = PdfProcess.getLineCoord(line_obj)
+                        lineObj = {"text": text, "spans": l["spans"]}
+                        style = U3_Line.getLineStyle(lineObj)
+                        fontsize = PdfProcess.getLineFontSize(lineObj)
+                        x0, x1, xm, y0, y1 = PdfProcess.getLineCoord(lineObj)
 
-                        # Words
-                        words_obj = {
-                            "First": U4_Compat.getFirstWord(line_obj),
-                            "Last":  U4_Compat.getLastWord(line_obj)
+                        wordsObj = {
+                            "First": U4_Compat.getFirstWord(lineObj),
+                            "Last":  U4_Compat.getLastWord(lineObj)
                         }
 
-                        line_dict = {
+                        lineDict = {
                             "Line": len(lines) + 1,
                             "Text": text,
-                            "MarkerText": marker_text,
-                            "MarkerType": marker_type,
+                            "MarkerText": markerText,
+                            "MarkerType": markerType,
                             "Style": style,
                             "FontSize": fontsize,
-                            "Words": words_obj,
+                            "Words": wordsObj,
                             "Coords": {"X0": x0, "X1": x1, "XM": xm, "Y0": y0, "Y1": y1}
                         }
-                        lines.append(line_dict)
+                        lines.append(lineDict)
         return {"general": general, "lines": lines}
 
 
@@ -360,7 +348,7 @@ class U7_Setters:
         commonFontSize = U7_Setters.setCommonFontSize(lines)
         commonMarkers = U7_Setters.setCommonMarkers(lines)
 
-        new_general = {
+        newGeneral = {
             "pageGeneralSize": baseJson["general"]["pageGeneralSize"],
             "pageCoords": {"xStart": xStart, "yStart": yStart, "xEnd": xEnd, "yEnd": yEnd, "xMid": xMid, "yMid": yMid},
             "pageRegionWidth": regionWidth,
@@ -370,24 +358,24 @@ class U7_Setters:
             "commonMarkers": commonMarkers
         }
 
-        new_lines = []
+        newLines = []
         for i, line in enumerate(lines):
             lineWidth, lineHeight = PdfProcess.setLineSize(line)
             pos = PdfProcess.setPosition(line, lines[i - 1] if i > 0 else None,
                               lines[i + 1] if i < len(lines) - 1 else None,
                               xStart, xEnd, xMid)
-            pos_dict = {"Left": pos[0], "Right": pos[1], "Mid": pos[2], "Top": pos[3], "Bot": pos[4]}
+            posDict = {"Left": pos[0], "Right": pos[1], "Mid": pos[2], "Top": pos[3], "Bot": pos[4]}
 
-            line_dict = {
+            lineDict = {
                 **line,
                 "LineWidth": lineWidth,
                 "LineHeight": lineHeight,
-                "Position": pos_dict,
-                "Align": PdfProcess.setAlign(pos_dict, regionWidth)
+                "Position": posDict,
+                "Align": PdfProcess.setAlign(posDict, regionWidth)
             }
-            new_lines.append(line_dict)
+            newLines.append(lineDict)
 
-        return {"general": new_general, "lines": new_lines}
+        return {"general": newGeneral, "lines": newLines}
 
 
 # ===============================
@@ -409,30 +397,30 @@ class U8_Cleanup:
             pos = line.get("Position", {})
 
             if "Top" in pos and pos["Top"] < 0:
-                top_candidates = []
+                topCandidates = []
                 if i > 0:
-                    prev_top = lines[i - 1].get("Position", {}).get("Top")
-                    if prev_top is not None:
-                        top_candidates.append(prev_top)
+                    prevTop = lines[i - 1].get("Position", {}).get("Top")
+                    if prevTop is not None:
+                        topCandidates.append(prevTop)
                 if i < len(lines) - 1:
-                    next_top = lines[i + 1].get("Position", {}).get("Top")
-                    if next_top is not None:
-                        top_candidates.append(next_top)
-                if top_candidates:
-                    pos["Top"] = min(top_candidates)
+                    nextTop = lines[i + 1].get("Position", {}).get("Top")
+                    if nextTop is not None:
+                        topCandidates.append(nextTop)
+                if topCandidates:
+                    pos["Top"] = min(topCandidates)
 
             if "Bot" in pos and pos["Bot"] < 0:
-                bot_candidates = []
+                botCandidates = []
                 if i > 0:
-                    prev_bot = lines[i - 1].get("Position", {}).get("Bot")
-                    if prev_bot is not None:
-                        bot_candidates.append(prev_bot)
+                    prevBot = lines[i - 1].get("Position", {}).get("Bot")
+                    if prevBot is not None:
+                        botCandidates.append(prevBot)
                 if i < len(lines) - 1:
-                    next_bot = lines[i + 1].get("Position", {}).get("Bot")
-                    if next_bot is not None:
-                        bot_candidates.append(next_bot)
-                if bot_candidates:
-                    pos["Bot"] = min(bot_candidates)
+                    nextBot = lines[i + 1].get("Position", {}).get("Bot")
+                    if nextBot is not None:
+                        botCandidates.append(nextBot)
+                if botCandidates:
+                    pos["Bot"] = min(botCandidates)
             line["Position"] = pos
         return jsonDict
 
@@ -456,39 +444,36 @@ class U8_Cleanup:
 # ===============================
 # 9. Hàm chính extractData (giữ API cũ)
 # ===============================
-def extractData(pdf_doc, exceptData, markerData, statusData):
+def extractData(pdfDoc, exceptData, markerData, statusData):
 
-    # ===== 1. Load JSON theo format đồng bộ =====
     exceptions = dict(exceptData)
     markers = dict(markerData)
     status = dict(statusData)
 
-    # ===== 2. Biên dịch markers =====
     keywords = markers.get("keywords", [])
-    title_keywords = '|'.join(re.escape(k[0].upper() + k[1:].lower()) for k in keywords)
-    upper_keywords = '|'.join(re.escape(k.upper()) for k in keywords)
-    all_keywords = f"{title_keywords}|{upper_keywords}"
+    titleKeywords = '|'.join(re.escape(k[0].upper() + k[1:].lower()) for k in keywords)
+    upperKeywords = '|'.join(re.escape(k.upper()) for k in keywords)
+    allKeywords = f"{titleKeywords}|{upperKeywords}"
 
-    compiled_markers = []
+    compiledMarkers = []
     for item in markers.get("markers", []):
-        pattern_str = item["pattern"].replace("{keywords}", all_keywords)
+        patternStr = item["pattern"].replace("{keywords}", allKeywords)
         try:
-            compiled_pattern = re.compile(pattern_str)
+            compiledPattern = re.compile(patternStr)
         except re.error:
             continue
-        compiled_markers.append({
-            "pattern": compiled_pattern,
+        compiledMarkers.append({
+            "pattern": compiledPattern,
             "description": item.get("description", ""),
             "type": item.get("type", "")
         })
 
     patterns = {
-        "markers": compiled_markers,
+        "markers": compiledMarkers,
         "keywords_set": set(k.lower() for k in keywords)
     }
 
-    # ===== 3. Xử lý PDF =====
-    baseJson = U6_Document.getTextStatus(pdf_doc, exceptions, patterns)
+    baseJson = U6_Document.getTextStatus(pdfDoc, exceptions, patterns)
     baseJson["lines"] = U1_Utils.normalizeRomans(baseJson["lines"])
 
     modifiedJson = U7_Setters.setTextStatus(baseJson)
@@ -496,13 +481,12 @@ def extractData(pdf_doc, exceptData, markerData, statusData):
     extractedData = U8_Cleanup.delStatus(cleanJson, ["Coords"])
     extractedData = U8_Cleanup.normalizeFinal(extractedData)
 
-    # ===== 4. Bổ sung tên riêng động =====
-    proper_names_auto = U1_Utils.collect_proper_names(extractedData["lines"], min_count=10)
+    properNamesAuto = U1_Utils.collectProperNames(extractedData["lines"], minCount=10)
 
-    proper_names_existing = [p["text"] if isinstance(p, dict) else str(p)
+    properNamesExisting = [p["text"] if isinstance(p, dict) else str(p)
                                 for p in exceptions.get("proper_names", [])]
 
-    exceptions["proper_names"] = list(set(proper_names_existing) | proper_names_auto)
+    exceptions["proper_names"] = list(set(properNamesExisting) | properNamesAuto)
 
     return extractedData
 
@@ -519,47 +503,45 @@ class B1Extractor:
         exceptData: Any,
         markerData: Any,
         statusData: Any,
-        proper_name_min_count: int = 10,
+        properNameMinCount: int = 10,
     ) -> None:
         """
         exceptData / markerData / statusData:
           - str: đường dẫn tới JSON theo format đồng bộ (U1_Utils.loadHardcodes)
           - dict: dữ liệu đã load sẵn (bỏ qua loadHardcodes)
-        proper_name_min_count:
+        properNameMinCount:
           - Ngưỡng đếm tên riêng động.
         """
-        # ---- 1) Nạp exceptions/markers/status (không đổi format) ----
-        def _ensure_dict(src, wanted=None):
+        def _ensureDict(src, wanted=None):
             if isinstance(src, dict):
                 return dict(src)
             raise ValueError("Vui lòng truyền dict đã load sẵn thay vì đường dẫn file.")
 
-        self.exceptions: Dict[str, Any] = _ensure_dict(
+        self.exceptions: Dict[str, Any] = _ensureDict(
             exceptData, wanted=["common_words", "proper_names", "abbreviations"]
         )
-        self.markers: Dict[str, Any] = _ensure_dict(
+        self.markers: Dict[str, Any] = _ensureDict(
             markerData, wanted=["keywords", "markers"]
         )
-        self.status: Dict[str, Any] = _ensure_dict(statusData)
+        self.status: Dict[str, Any] = _ensureDict(statusData)
 
-        self.proper_name_min_count = proper_name_min_count
+        self.properNameMinCount = properNameMinCount
 
-        # ---- 2) Biên dịch markers (y như logic cũ) ----
         keywords = self.markers.get("keywords", [])
-        title_keywords = "|".join(re.escape(k[0].upper() + k[1:].lower()) for k in keywords)
-        upper_keywords = "|".join(re.escape(k.upper()) for k in keywords)
-        all_keywords = f"{title_keywords}|{upper_keywords}" if keywords else ""
+        titleKeywords = "|".join(re.escape(k[0].upper() + k[1:].lower()) for k in keywords)
+        upperKeywords = "|".join(re.escape(k.upper()) for k in keywords)
+        allKeywords = f"{titleKeywords}|{upperKeywords}" if keywords else ""
 
-        compiled_markers = []
+        compiledMarkers = []
         for item in self.markers.get("markers", []):
-            pattern_str = item.get("pattern", "")
-            if all_keywords:
-                pattern_str = pattern_str.replace("{keywords}", all_keywords)
+            patternStr = item.get("pattern", "")
+            if allKeywords:
+                patternStr = patternStr.replace("{keywords}", allKeywords)
             try:
-                compiled = re.compile(pattern_str)
+                compiled = re.compile(patternStr)
             except re.error:
                 continue
-            compiled_markers.append(
+            compiledMarkers.append(
                 {
                     "pattern": compiled,
                     "description": item.get("description", ""),
@@ -568,36 +550,31 @@ class B1Extractor:
             )
 
         self.patterns = {
-            "markers": compiled_markers,
+            "markers": compiledMarkers,
             "keywords_set": set(k.lower() for k in keywords),
         }
 
-    # ---------- Public API ----------
-    def extract(self, pdf_doc) -> Dict[str, Any]:
+    def extract(self, pdfDoc) -> Dict[str, Any]:
         """
         Chạy pipeline extractData cũ cho 1 file PDF.
         Trả về extractedData (như trước).
         """
 
-        # ===== 3) Trích xuất text & thuộc tính dòng từ PDF =====
-        baseJson = U6_Document.getTextStatus(pdf_doc, self.exceptions, self.patterns)
+        baseJson = U6_Document.getTextStatus(pdfDoc, self.exceptions, self.patterns)
 
-        # Chuẩn hoá số La Mã (giữ nguyên quy tắc)
         baseJson["lines"] = U1_Utils.normalizeRomans(baseJson["lines"])
 
-        # ===== 4) Tính toán status/position/align (giữ nguyên) =====
         modifiedJson = U7_Setters.setTextStatus(baseJson)
         cleanJson = U8_Cleanup.resetPosition(modifiedJson)
         extractedData = U8_Cleanup.delStatus(cleanJson, ["Coords"])
         extractedData = U8_Cleanup.normalizeFinal(extractedData)
 
-        # ===== 5) Proper_names =====
-        proper_names_auto = U1_Utils.collect_proper_names(
-            extractedData["lines"], min_count=self.proper_name_min_count
+        properNamesAuto = U1_Utils.collectProperNames(
+            extractedData["lines"], minCount=self.properNameMinCount
         )
-        proper_names_existing = [
+        properNamesExisting = [
             p["text"] if isinstance(p, dict) else str(p)
             for p in self.exceptions.get("proper_names", [])
         ]
-        self.exceptions["proper_names"] = list(set(proper_names_existing) | proper_names_auto)
+        self.exceptions["proper_names"] = list(set(properNamesExisting) | properNamesAuto)
         return extractedData

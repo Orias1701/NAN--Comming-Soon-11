@@ -16,8 +16,8 @@ class MergeUtils:
         - Lấy min của từng chữ số
         """
         digits = [list(str(s).zfill(4)) for s in styles]
-        min_digits = [min(int(d[i]) for d in digits) for i in range(4)]
-        return int("".join(str(d) for d in min_digits))
+        minDigits = [min(int(d[i]) for d in digits) for i in range(4)]
+        return int("".join(str(d) for d in minDigits))
 
     @staticmethod
     def mostCommon(values):
@@ -38,12 +38,12 @@ class MergeValidator:
     Tất cả các hàm là static."""
 
     @staticmethod
-    def canMerge(prev, curr, idx_prev=None, idx_curr=None):
+    def canMerge(prev, curr, idxPrev=None, idxCurr=None):
         """
         Kiểm tra line curr có thể merge vào prev không
         Ghi log lý do True/False
         """
-        pair = f"[{idx_prev+1}->{idx_curr+1}]" if idx_prev is not None else ""
+        pair = f"[{idxPrev+1}->{idxCurr+1}]" if idxPrev is not None else ""
 
         if MergeValidator.isNewPara(curr):
             return False
@@ -161,12 +161,12 @@ class MergeValidator:
         if "LineHeight" not in curr:
             return False
         
-        hig_curr = curr["LineHeight"]
-        top_prev = prev["Position"]["Top"]
-        top_curr = curr["Position"]["Top"]
-        bot_curr = curr["Position"]["Bot"]
+        higCurr = curr["LineHeight"]
+        topPrev = prev["Position"]["Top"]
+        topCurr = curr["Position"]["Top"]
+        botCurr = curr["Position"]["Bot"]
         
-        return (top_curr < top_prev * 2) and ((top_curr < bot_curr * 2) or bot_curr <= 3.0) and (top_curr < hig_curr * 5)
+        return (topCurr < topPrev * 2) and ((topCurr < botCurr * 2) or botCurr <= 3.0) and (topCurr < higCurr * 5)
 
     @staticmethod
     def isSameAlign(prev, curr):
@@ -211,9 +211,9 @@ class ParagraphBuilder:
     """Lớp chịu trách nhiệm xây dựng một đối tượng Paragraph
     từ một danh sách các 'lines' đã được xác định là thuộc về nhau."""
     
-    def __init__(self, lines, para_id, general=None):
+    def __init__(self, lines, paraId, general=None):
         self.lines = lines
-        self.para_id = para_id
+        self.paraId = paraId
         self.general = general
 
     def build(self):
@@ -221,38 +221,36 @@ class ParagraphBuilder:
         Tạo dict Paragraph từ list lines đã merge
         """
         text = " ".join([ln["Text"] for ln in self.lines])
-        marker_text = self.lines[0]["MarkerText"]
-        marker_type = self.lines[0]["MarkerType"]
+        markerText = self.lines[0]["MarkerText"]
+        markerType = self.lines[0]["MarkerType"]
 
-        # Style: lấy min theo từng chữ số
         style = MergeUtils.mergeStyle([ln["Style"] for ln in self.lines])
 
-        fs_values = [ln["FontSize"] for ln in self.lines if ln.get("FontSize") is not None]
+        fsValues = [ln["FontSize"] for ln in self.lines if ln.get("FontSize") is not None]
 
-        if fs_values:
-            modes = multimode(fs_values)  # trả về list tất cả các mode
+        if fsValues:
+            modes = multimode(fsValues)
             if len(modes) == 1:
-                font_size = modes[0]
+                fontSize = modes[0]
             else:
-                # có nhiều mode → chọn gần với commonFontSize trong general
                 if self.general and self.general.get("commonFontSize") is not None:
                     target = self.general["commonFontSize"]
-                    font_size = min(modes, key=lambda x: abs(x - target))
+                    fontSize = min(modes, key=lambda x: abs(x - target))
                 else:
-                    font_size = mean(fs_values)
-            font_size = round(font_size, 1)
+                    fontSize = mean(fsValues)
+            fontSize = round(fontSize, 1)
         else:
-            font_size = 12.0
+            fontSize = 12.0
             
         align = MergeUtils.mostCommon([ln["Align"] for ln in self.lines]) or self.lines[-1]["Align"]
 
         return {
-            "Paragraph": self.para_id,
+            "Paragraph": self.paraId,
             "Text": text,
-            "MarkerText": marker_text,
-            "MarkerType": marker_type,
+            "MarkerText": markerText,
+            "MarkerType": markerType,
             "Style": style,
-            "FontSize": font_size,
+            "FontSize": fontSize,
             "Align": align,
         }
 
@@ -276,17 +274,17 @@ class GeneralUpdater:
         """
         Cập nhật lại các 'common' trong mergedJson['general'] dựa trên danh sách paragraphs.
         """
-        self._update_font_sizes()
-        self._update_markers()
+        self._updateFontSizes()
+        self._updateMarkers()
         
         return self.mergedJson
 
-    def _update_font_sizes(self):
-        fs_values = [p["FontSize"] for p in self.paragraphs if p.get("FontSize") is not None]
-        fs_counter = Counter(fs_values)
+    def _updateFontSizes(self):
+        fsValues = [p["FontSize"] for p in self.paragraphs if p.get("FontSize") is not None]
+        fsCounter = Counter(fsValues)
 
         commonFontSizes = [{"FontSize": round(fs, 1), "Count": cnt}
-                           for fs, cnt in fs_counter.most_common()]
+                           for fs, cnt in fsCounter.most_common()]
         commonFontSize = commonFontSizes[0]["FontSize"] if commonFontSizes else None
 
         self.general.update({
@@ -294,11 +292,11 @@ class GeneralUpdater:
             "commonFontSizes": commonFontSizes,
         })
 
-    def _update_markers(self):
-        mk_values = [p["MarkerType"] for p in self.paragraphs if p.get("MarkerType")]
-        mk_counter = Counter(mk_values)
+    def _updateMarkers(self):
+        mkValues = [p["MarkerType"] for p in self.paragraphs if p.get("MarkerType")]
+        mkCounter = Counter(mkValues)
         threshold = max(1, int(self.total * 0.005))
-        commonMarkers = [m for m, c in mk_counter.most_common(10) if c >= threshold]
+        commonMarkers = [m for m, c in mkCounter.most_common(10) if c >= threshold]
 
         self.general.update({
             "commonMarkers": commonMarkers
@@ -340,6 +338,6 @@ class ParagraphMerger:
         merged = {"general": general, "paragraphs": paragraphs}
         
         updater = GeneralUpdater(merged)
-        updated_merged_json = updater.recompute()
+        updatedMergedJson = updater.recompute()
 
-        return updated_merged_json
+        return updatedMergedJson

@@ -16,10 +16,10 @@ from pydantic import BaseModel
 
 API_SECRET = os.getenv("API_SECRET", "").strip() 
 
-def require_bearer(authorization: Optional[str] = Header(None)):
+def requireBearer(authorization: Optional[str] = Header(None)):
     """Kiểm tra Bearer token nếu bật API_SECRET."""
     if not API_SECRET:
-        return  # Không bật xác thực
+        return
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Missing Bearer token")
     token = authorization.split(" ", 1)[1].strip()
@@ -30,12 +30,11 @@ def require_bearer(authorization: Optional[str] = Header(None)):
 # 🧩 Import project modules
 # -------------------------
 try:
-    # Import file chính của bạn
     print("Đang tải appFinal (models, indexes...). Vui lòng chờ...")
-    import appFinal as APP_CALLED
+    import appFinal as appCalled
     print("✅ Đã load appFinal.")
 except Exception as e:
-    APP_CALLED = None
+    appCalled = None
     print(f"⚠️ CRITICAL: Không thể import appFinal: {e}")
     raise e
 
@@ -67,41 +66,40 @@ def root():
         "message": "📘 Document AI API đang chạy.",
         "status": "ok",
         "docs": "/docs",
-        "appFinal_loaded": bool(APP_CALLED),
+        "appFinal_loaded": bool(appCalled),
     }
 
 # -------------------------
 # 🩺 /health
 # -------------------------
 @app.get("/health")
-def health(_=Depends(require_bearer)):
+def health(_=Depends(requireBearer)):
     """Kiểm tra trạng thái hoạt động."""
-    app_ok = bool(APP_CALLED)
+    appOk = bool(appCalled)
     return {
         "status": "ok",
         "time": time.time(),
-        "appFinal_loaded": app_ok,
-        "main_index_loaded": bool(APP_CALLED.g_FaissIndex) if app_ok else False,
-        "service_index_loaded": bool(APP_CALLED.g_serviceFaissIndex) if app_ok else False,
+        "appFinal_loaded": appOk,
+        "main_index_loaded": bool(appCalled.gFaissIndex) if appOk else False,
+        "service_index_loaded": bool(appCalled.gServiceFaissIndex) if appOk else False,
     }
 
 # -------------------------
 # 📘 /process_pdf
 # -------------------------
 @app.post("/process_pdf")
-async def process_pdf(file: UploadFile = File(...), _=Depends(require_bearer)):
-    """Nhận file PDF -> chạy process_pdf_pipeline -> trả về summary + category."""
+async def processPdf(file: UploadFile = File(...), _=Depends(requireBearer)):
+    """Nhận file PDF -> chạy processPdfPipeline -> trả về summary + category."""
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Chỉ chấp nhận file PDF.")
 
-    pdf_bytes = await file.read()
+    pdfBytes = await file.read()
 
-    if not APP_CALLED or not hasattr(APP_CALLED, "process_pdf_pipeline"):
-        raise HTTPException(status_code=500, detail="Không tìm thấy appFinal.process_pdf_pipeline().")
+    if not appCalled or not hasattr(appCalled, "processPdfPipeline"):
+        raise HTTPException(status_code=500, detail="Không tìm thấy appFinal.processPdfPipeline().")
 
     try:
-        # Gọi hàm pipeline chúng ta đã tạo
-        result = APP_CALLED.process_pdf_pipeline(pdf_bytes)
+        result = appCalled.processPdfPipeline(pdfBytes)
         return {
             "status": "success",
             "checkstatus": result.get("checkstatus"),
@@ -120,18 +118,18 @@ class SearchIn(BaseModel):
     k: int = 1
 
 @app.post("/search", response_model=List[dict])
-def search(body: SearchIn, _=Depends(require_bearer)):
-    """Tìm kiếm bằng pipeline search_pipeline (FAISS + Rerank)."""
+def search(body: SearchIn, _=Depends(requireBearer)):
+    """Tìm kiếm bằng pipeline searchPipeline (FAISS + Rerank)."""
     q = (body.query or "").strip()
     if not q:
         raise HTTPException(status_code=400, detail="query không được để trống")
 
-    if not APP_CALLED or not hasattr(APP_CALLED, "search_pipeline"):
-        raise HTTPException(status_code=500, detail="Không tìm thấy appFinal.search_pipeline().")
+    if not appCalled or not hasattr(appCalled, "searchPipeline"):
+        raise HTTPException(status_code=500, detail="Không tìm thấy appFinal.searchPipeline().")
 
     try:
         # Gọi hàm pipeline (hàm này giờ trả về List[dict])
-        results = APP_CALLED.search_pipeline(q, k=body.k)
+        results = appCalled.searchPipeline(q, k=body.k)
         return results # Trả về list các đối tượng chunk
     except Exception as e:
         print(f"Lỗi /search: {e}")
@@ -148,26 +146,26 @@ class SummIn(BaseModel):
     maxLength: int = 200
 
 @app.post("/summarize")
-def summarize_text(body: SummIn, _=Depends(require_bearer)):
+def summarizeText(body: SummIn, _=Depends(requireBearer)):
     """Tóm tắt văn bản (dùng cho text bất kỳ)."""
     text = (body.text or "").strip()
     if not text:
         raise HTTPException(status_code=400, detail="text không được để trống")
 
     # Lưu ý: tên biến là summaryEngine (không phải summarizer_engine)
-    if not APP_CALLED or not hasattr(APP_CALLED, "summaryEngine"):
+    if not appCalled or not hasattr(appCalled, "summaryEngine"):
         raise HTTPException(status_code=500, detail="Không tìm thấy appFinal.summaryEngine.")
 
     try:
         # Gọi thẳng vào đối tượng summaryEngine
-        summarized = APP_CALLED.summaryEngine.summarize(
+        summarized = appCalled.summaryEngine.summarize(
             text, 
             minInput=body.minInput, 
             maxInput=body.maxInput,
-            min_length=body.minLength,
-            max_length=body.maxLength
+            minLength=body.minLength,
+            maxLength=body.maxLength
         )
-        return {"status": "success", "summary": summarized.get("summary_text", "")}
+        return {"status": "success", "summary": summarized.get("summaryText", "")}
     except Exception as e:
         print(f"Lỗi /summarize: {e}")
         raise HTTPException(status_code=500, detail=f"Lỗi tóm tắt: {str(e)}")

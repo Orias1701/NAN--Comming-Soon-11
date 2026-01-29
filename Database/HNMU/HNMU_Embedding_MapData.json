@@ -1945,6 +1945,6 @@
     "count": 388,
     "flatten_mode": "split",
     "schema_used": true,
-    "list_policy": "split"
+    "listPolicy": "split"
   }
 }

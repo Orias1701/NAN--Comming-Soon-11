@@ -15,30 +15,30 @@ class RecursiveSummarizer:
         self,
         tokenizer,
         summarizer,
-        sum_device: str,
-        chunk_builder: Json_ChunkUnder.ChunkUndertheseaBuilder,
-        max_length: int = 256,
-        min_length: int = 64,
-        max_depth: int = 5
+        sumDevice: str,
+        chunkBuilder: Json_ChunkUnder.ChunkUndertheseaBuilder,
+        maxLength: int = 256,
+        minLength: int = 64,
+        maxDepth: int = 5
     ):
         """
         tokenizer: AutoTokenizer đã load sẵn.
         summarizer: AutoModelForSeq2SeqLM (ViT5 / BartPho / mT5)
-        sum_device: 'cuda' hoặc 'cpu'
-        chunk_builder: ChunkUndertheseaBuilder instance.
+        sumDevice: 'cuda' hoặc 'cpu'
+        chunkBuilder: ChunkUndertheseaBuilder instance.
         """
         self.tokenizer = tokenizer
         self.model = summarizer
-        self.device = sum_device
-        self.chunk_builder = chunk_builder
-        self.max_length = max_length
-        self.min_length = min_length
-        self.max_depth = max_depth
+        self.device = sumDevice
+        self.chunkBuilder = chunkBuilder
+        self.maxLength = maxLength
+        self.minLength = minLength
+        self.maxDepth = maxDepth
 
     # ============================================================
     # 1️⃣ Hàm tóm tắt 1 đoạn
     # ============================================================
-    def summarize_single(self, text: str) -> str:
+    def summarizeSingle(self, text: str) -> str:
         """
         Tóm tắt 1 đoạn đơn bằng mô hình abstractive (ViT5/BartPho).
         """
@@ -55,14 +55,14 @@ class RecursiveSummarizer:
                 input_text,
                 return_tensors="pt",
                 truncation=True,
-                max_length=1024
+                maxLength=1024
             ).to(self.device)
 
             with torch.no_grad():
                 summary_ids = self.model.generate(
                     **inputs,
-                    max_length=self.max_length,
-                    min_length=self.min_length,
+                    maxLength=self.maxLength,
+                    minLength=self.minLength,
                     num_beams=4,
                     no_repeat_ngram_size=3,
                     early_stopping=True
@@ -79,8 +79,8 @@ class RecursiveSummarizer:
             with torch.no_grad():
                 summary_ids = self.model.generate(
                     **inputs,
-                    max_length=self.max_length,
-                    min_length=self.min_length,
+                    maxLength=self.maxLength,
+                    minLength=self.minLength,
                     num_beams=4
                 )
 
@@ -93,7 +93,7 @@ class RecursiveSummarizer:
     # ============================================================
     # 2️⃣ Đệ quy tóm tắt văn bản dài
     # ============================================================
-    def summarize_recursive(self, text: str, depth: int = 0, minInput: int = 256, maxInput: int = 1024) -> str:
+    def summarizeRecursive(self, text: str, depth: int = 0, minInput: int = 256, maxInput: int = 1024) -> str:
         """
         Đệ quy tóm tắt văn bản dài:
         - <256 từ: giữ nguyên
@@ -106,10 +106,10 @@ class RecursiveSummarizer:
 
         # 1️⃣ Văn bản ngắn
         if word_count < minInput:
-            return self.summarize_single(text)
+            return self.summarizeSingle(text)
 
         else:
-            chunks = self.chunk_builder.build(text)
+            chunks = self.chunkBuilder.build(text)
             summaries = []
 
             for item in chunks:
@@ -123,7 +123,7 @@ class RecursiveSummarizer:
                     continue
 
                 print(f"{indent}🔸 Chunk {idx}: {wc} từ")
-                sub_summary = self.summarize_single(content)
+                sub_summary = self.summarizeSingle(content)
                 if sub_summary:
                     summaries.append(sub_summary)
 
@@ -132,8 +132,8 @@ class RecursiveSummarizer:
             print(f"{indent}🔁 Gộp {len(summaries)} summary → {merged_len} từ")
 
             # Đệ quy nếu vẫn dài
-            if merged_len > 1024 and depth < self.max_depth:
-                return self.summarize_recursive(merged_summary, depth + 1)
+            if merged_len > 1024 and depth < self.maxDepth:
+                return self.summarizeRecursive(merged_summary, depth + 1)
             else:
                 return merged_summary
 
@@ -148,14 +148,14 @@ class RecursiveSummarizer:
         - Trả về dict gồm summary và thống kê
         """
         original_len = len(full_text.split())
-        summary = self.summarize_recursive(full_text, depth = 0, minInput = minInput, maxInput = maxInput)
+        summary = self.summarizeRecursive(full_text, depth = 0, minInput = minInput, maxInput = maxInput)
 
         summary_len = len(summary.split())
         ratio = round(summary_len / original_len, 3) if original_len else 0
 
         print(f"\n✨ FINAL SUMMARY ({summary_len}/{original_len} từ, r={ratio}) ✨")
         return {
-            "summary_text": summary,
+            "summaryText": summary,
             "original_words": original_len,
             "summary_words": summary_len,
             "compression_ratio": ratio

@@ -41,17 +41,16 @@ def setPosition(line, prev_line, next_line, xStart, xEnd, xMid):
 def extractWords(line):
     """Trả về list [(word, span)] theo thứ tự trong line; giữ nguyên dấu câu."""
     spans = line.get("spans", [])
-    full_text = line.get("text", "")
-    if not spans or not full_text.strip():
+    fullText = line.get("text", "")
+    if not spans or not fullText.strip():
         return []
 
-    # chỉ giữ spans có chữ thật
-    valid_spans = [s for s in spans if s.get("text", "").strip()]
-    if not valid_spans:
-        valid_spans = spans
+    validSpans = [s for s in spans if s.get("text", "").strip()]
+    if not validSpans:
+        validSpans = spans
 
     words = []
-    for s in valid_spans:
+    for s in validSpans:
         for raw in s.get("text", "").split():
             words.append((raw, s))
     return words

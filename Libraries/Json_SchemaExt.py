@@ -2,24 +2,24 @@ from typing import Dict, List, Any
 
 class JSONSchemaExtractor:
 
-    def __init__(self, list_policy: str = "first", verbose: bool = True) -> None:
+    def __init__(self, listPolicy: str = "first", verbose: bool = True) -> None:
         """
-        :param list_policy: "first" | "union"
+        :param listPolicy: "first" | "union"
             - "first": nếu gặp list các object, lấy schema theo PHẦN TỬ ĐẦU (như bản gốc).
             - "union": duyệt mọi phần tử, hợp nhất các field/type.
         """
-        assert list_policy in ("first", "union"), "list_policy must be 'first' or 'union'"
-        self.list_policy = list_policy
+        assert listPolicy in ("first", "union"), "listPolicy must be 'first' or 'union'"
+        self.listPolicy = listPolicy
         self.verbose = verbose
 
-        self._processed_fields: set[str] = set()
-        self._full_schema: Dict[str, str] = {}
+        self._processedFields: set[str] = set()
+        self._fullSchema: Dict[str, str] = {}
 
     # =====================================
     # 1) Chuẩn hóa kiểu dữ liệu
     # =====================================
     @staticmethod
-    def get_standard_type(value: Any) -> str:
+    def getStandardType(value: Any) -> str:
 
         if isinstance(value, bool):
             return "boolean"
@@ -40,116 +40,116 @@ class JSONSchemaExtractor:
     # =====================================
     # 2) Hợp nhất kiểu (null / mixed)
     # =====================================
-    def _merge_type(self, key: str, new_type: str, item_index: int) -> None:
+    def _mergeType(self, key: str, newType: str, itemIndex: int) -> None:
         """
-        Cập nhật self._full_schema[key] theo quy tắc:
-         - Nếu chưa có: đặt = new_type và log "New: ..."
+        Cập nhật self._fullSchema[key] theo quy tắc:
+         - Nếu chưa có: đặt = newType và log "New: ..."
          - Nếu khác:
-             + Nếu new_type == "null": giữ kiểu cũ.
-             + Nếu kiểu cũ == "null": cập nhật = new_type.
+             + Nếu newType == "null": giữ kiểu cũ.
+             + Nếu kiểu cũ == "null": cập nhật = newType.
              + Ngược lại: nếu khác nhau và chưa "mixed" => set "mixed" và cảnh báo.
         """
-        if key not in self._full_schema:
-            self._full_schema[key] = new_type
-            self._processed_fields.add(key)
+        if key not in self._fullSchema:
+            self._fullSchema[key] = newType
+            self._processedFields.add(key)
             return
 
-        old_type = self._full_schema[key]
-        if old_type == new_type:
+        oldType = self._fullSchema[key]
+        if oldType == newType:
             return
 
-        if new_type == "null":
+        if newType == "null":
             return
         
-        if old_type == "null":
-            self._full_schema[key] = new_type
+        if oldType == "null":
+            self._fullSchema[key] = newType
             return
 
-        if old_type != "mixed":
-            self._full_schema[key] = "mixed"
+        if oldType != "mixed":
+            self._fullSchema[key] = "mixed"
 
     # =====================================
     # 3) Đệ quy trích xuất schema
     # =====================================
-    def _extract_schema_from_obj(self, data: Dict[str, Any], prefix: str, item_index: int) -> None:
+    def _extractSchemaFromObj(self, data: Dict[str, Any], prefix: str, itemIndex: int) -> None:
         """
-        Duyệt dict hiện tại, cập nhật _full_schema với kiểu tại key (phẳng),
+        Duyệt dict hiện tại, cập nhật _fullSchema với kiểu tại key (phẳng),
         và nếu là object/array lồng thì đệ quy theo quy tắc gốc.
         """
         for key, value in data.items():
-            new_prefix = f"{prefix}{key}" if prefix else key
+            newPrefix = f"{prefix}{key}" if prefix else key
 
-            vtype = self.get_standard_type(value)
-            self._merge_type(new_prefix, vtype, item_index)
+            vtype = self.getStandardType(value)
+            self._mergeType(newPrefix, vtype, itemIndex)
 
             if isinstance(value, dict):
-                self._extract_schema_from_obj(value, f"{new_prefix}.", item_index)
+                self._extractSchemaFromObj(value, f"{newPrefix}.", itemIndex)
 
             elif isinstance(value, list) and value:
                 first = value[0]
                 if isinstance(first, dict):
-                    if self.list_policy == "first":
-                        self._extract_schema_from_obj(first, f"{new_prefix}.", item_index)
+                    if self.listPolicy == "first":
+                        self._extractSchemaFromObj(first, f"{newPrefix}.", itemIndex)
                     else:  # union
                         for elem in value:
                             if isinstance(elem, dict):
-                                self._extract_schema_from_obj(elem, f"{new_prefix}.", item_index)
+                                self._extractSchemaFromObj(elem, f"{newPrefix}.", itemIndex)
                 elif isinstance(first, list):
-                    if self.list_policy == "first":
-                        self._extract_schema_from_list(first, f"{new_prefix}.", item_index)
+                    if self.listPolicy == "first":
+                        self._extractSchemaFromList(first, f"{newPrefix}.", itemIndex)
                     else:
                         for elem in value:
                             if isinstance(elem, list):
-                                self._extract_schema_from_list(elem, f"{new_prefix}.", item_index)
+                                self._extractSchemaFromList(elem, f"{newPrefix}.", itemIndex)
 
-    def _extract_schema_from_list(self, data_list: List[Any], prefix: str, item_index: int) -> None:
+    def _extractSchemaFromList(self, dataList: List[Any], prefix: str, itemIndex: int) -> None:
         """
-        Hỗ trợ cho trường hợp list lồng list (ít gặp). Duyệt tương tự _extract_schema_from_obj.
+        Hỗ trợ cho trường hợp list lồng list (ít gặp). Duyệt tương tự _extractSchemaFromObj.
         """
-        if not data_list:
+        if not dataList:
             return
 
-        first = data_list[0]
+        first = dataList[0]
         if isinstance(first, dict):
-            if self.list_policy == "first":
-                self._extract_schema_from_obj(first, prefix, item_index)
+            if self.listPolicy == "first":
+                self._extractSchemaFromObj(first, prefix, itemIndex)
             else:
-                for elem in data_list:
+                for elem in dataList:
                     if isinstance(elem, dict):
-                        self._extract_schema_from_obj(elem, prefix, item_index)
+                        self._extractSchemaFromObj(elem, prefix, itemIndex)
         elif isinstance(first, list):
-            if self.list_policy == "first":
-                self._extract_schema_from_list(first, prefix, item_index)
+            if self.listPolicy == "first":
+                self._extractSchemaFromList(first, prefix, itemIndex)
             else:
-                for elem in data_list:
+                for elem in dataList:
                     if isinstance(elem, list):
-                        self._extract_schema_from_list(elem, prefix, item_index)
+                        self._extractSchemaFromList(elem, prefix, itemIndex)
 
     # =====================================
     # 4) API chính (data/file)
     # =====================================
-    def create_schema_from_data(self, data: Any) -> Dict[str, str]:
+    def createSchemaFromData(self, data: Any) -> Dict[str, str]:
         """
         Tạo schema từ biến Python (list | dict).
         Giữ log giống bản gốc.
         """
 
-        self._processed_fields.clear()
-        self._full_schema.clear()
+        self._processedFields.clear()
+        self._fullSchema.clear()
 
-        data_list = data if isinstance(data, list) else [data]
+        dataList = data if isinstance(data, list) else [data]
 
-        if not data_list:
+        if not dataList:
             raise ValueError("JSON data is empty")
 
-        for i, item in enumerate(data_list, 1):
+        for i, item in enumerate(dataList, 1):
             if not isinstance(item, dict):
                 continue
 
-            self._extract_schema_from_obj(item, prefix="", item_index=i)
+            self._extractSchemaFromObj(item, prefix="", itemIndex=i)
 
-        return dict(self._full_schema)
+        return dict(self._fullSchema)
 
-    def schemaRun(self, SegmentDict: str) -> Dict[str, str]:
-        SchemaDict = self.create_schema_from_data(SegmentDict)
-        return SchemaDict
+    def schemaRun(self, segmentDict: str) -> Dict[str, str]:
+        schemaDict = self.createSchemaFromData(segmentDict)
+        return schemaDict

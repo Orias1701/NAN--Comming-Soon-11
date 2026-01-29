@@ -32,17 +32,17 @@ class ModelLoader:
     # -----------------------------
     # Construction / State
     # -----------------------------
-    def __init__(self, prefer_cuda: bool = True) -> None:
+    def __init__(self, preferCuda: bool = True) -> None:
         self.models: Dict[str, Any] = {}
         self.tokenizers: Dict[str, Any] = {}
         self.devices: Dict[str, torch.device] = {}
-        self.prefer_cuda = prefer_cuda
+        self.preferCuda = preferCuda
 
     # -----------------------------
     # Device helpers
     # -----------------------------
     @staticmethod
-    def _cuda_check() -> None:
+    def _cudaCheck() -> None:
         print("CUDA supported:", torch.cuda.is_available())
         print("Number of GPUs:", torch.cuda.device_count())
         if torch.cuda.is_available():
@@ -53,13 +53,13 @@ class ModelLoader:
         else:
             print("⚠️ CUDA not available, using CPU.")
 
-    def _get_device(self) -> torch.device:
-        if self.prefer_cuda and torch.cuda.is_available():
+    def _getDevice(self) -> torch.device:
+        if self.preferCuda and torch.cuda.is_available():
             return torch.device("cuda")
         return torch.device("cpu")
 
     @staticmethod
-    def _ensure_dir(path: Optional[str]) -> None:
+    def _ensureDir(path: Optional[str]) -> None:
         if path:
             os.makedirs(path, exist_ok=True)
 
@@ -67,49 +67,49 @@ class ModelLoader:
     # SentenceTransformer (Encoder/Chunker)
     # -----------------------------
     @staticmethod
-    def _ensure_cached_sentence_model(model_name: str, cache_path: str) -> str:
+    def _ensureCachedSentenceModel(modelName: str, cachePath: str) -> str:
         """
-        Ensure SentenceTransformer exists under cache_path.
+        Ensure SentenceTransformer exists under cachePath.
         Rebuild structure if config missing.
         """
-        if not os.path.exists(cache_path):
-            print(f"📥 Downloading SentenceTransformer to: {cache_path}")
-            model = SentenceTransformer(model_name)
-            model.save(cache_path)
+        if not os.path.exists(cachePath):
+            print(f"📥 Downloading SentenceTransformer to: {cachePath}")
+            model = SentenceTransformer(modelName)
+            model.save(cachePath)
             print("✅ Cached SentenceTransformer successfully.")
         else:
-            cfg = os.path.join(cache_path, "config_sentence_transformers.json")
+            cfg = os.path.join(cachePath, "config_sentence_transformers.json")
             if not os.path.exists(cfg):
                 print("⚙️ Rebuilding SentenceTransformer cache structure...")
-                tmp = SentenceTransformer(model_name)
-                tmp.save(cache_path)
-        return cache_path
+                tmp = SentenceTransformer(modelName)
+                tmp.save(cachePath)
+        return cachePath
 
-    def _load_sentence_model(self, model_name: str, cache_path: Optional[str]) -> Tuple[SentenceTransformer, torch.device]:
-        device = self._get_device()
-        print(f"\n🔍 Loading SentenceTransformer ({model_name}) on {device} ...")
-        self._cuda_check()
+    def _loadSentenceModel(self, modelName: str, cachePath: Optional[str]) -> Tuple[SentenceTransformer, torch.device]:
+        device = self._getDevice()
+        print(f"\n🔍 Loading SentenceTransformer ({modelName}) on {device} ...")
+        self._cudaCheck()
 
-        if cache_path:
-            self._ensure_dir(cache_path)
-            self._ensure_cached_sentence_model(model_name, cache_path)
-            model = SentenceTransformer(cache_path, device=str(device))
-            print(f"📂 Loaded from cache: {cache_path}")
+        if cachePath:
+            self._ensureDir(cachePath)
+            self._ensureCachedSentenceModel(modelName, cachePath)
+            model = SentenceTransformer(cachePath, device=str(device))
+            print(f"📂 Loaded from cache: {cachePath}")
         else:
-            model = SentenceTransformer(model_name, device=str(device))
+            model = SentenceTransformer(modelName, device=str(device))
 
         print("✅ SentenceTransformer ready.")
         return model, device
 
     # Public APIs for SentenceTransformer
-    def load_encoder(self, name: str, cache: Optional[str] = None) -> Tuple[SentenceTransformer, torch.device]:
-        model, device = self._load_sentence_model(name, cache)
+    def loadEncoder(self, name: str, cache: Optional[str] = None) -> Tuple[SentenceTransformer, torch.device]:
+        model, device = self._loadSentenceModel(name, cache)
         self.models["encoder"] = model
         self.devices["encoder"] = device
         return model, device
 
-    def load_chunker(self, name: str, cache: Optional[str] = None) -> Tuple[SentenceTransformer, torch.device]:
-        model, device = self._load_sentence_model(name, cache)
+    def loadChunker(self, name: str, cache: Optional[str] = None) -> Tuple[SentenceTransformer, torch.device]:
+        model, device = self._loadSentenceModel(name, cache)
         self.models["chunker"] = model
         self.devices["chunker"] = device
         return model, device
@@ -118,44 +118,44 @@ class ModelLoader:
     # Summarizer (Seq2Seq: T5/BART/vit5)
     # -----------------------------
     @staticmethod
-    def _has_hf_config(cache_dir: str) -> bool:
-        return os.path.exists(os.path.join(cache_dir, "config.json"))
+    def _hasHfConfig(cacheDir: str) -> bool:
+        return os.path.exists(os.path.join(cacheDir, "config.json"))
 
     @staticmethod
-    def _download_and_cache_summarizer(model_name: str, cache_dir: str) -> None:
+    def _downloadAndCacheSummarizer(modelName: str, cacheDir: str) -> None:
         """
-        Download HF model + tokenizer and save_pretrained to cache_dir.
+        Download HF model + tokenizer and save_pretrained to cacheDir.
         """
         print("⚙️ Cache missing — downloading model from Hugging Face...")
-        tokenizer = AutoTokenizer.from_pretrained(model_name)
-        model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
-        os.makedirs(cache_dir, exist_ok=True)
-        tokenizer.save_pretrained(cache_dir)
-        model.save_pretrained(cache_dir)
-        print(f"✅ Summarizer cached at: {cache_dir}")
+        tokenizer = AutoTokenizer.from_pretrained(modelName)
+        model = AutoModelForSeq2SeqLM.from_pretrained(modelName)
+        os.makedirs(cacheDir, exist_ok=True)
+        tokenizer.save_pretrained(cacheDir)
+        model.save_pretrained(cacheDir)
+        print(f"✅ Summarizer cached at: {cacheDir}")
 
-    def _load_summarizer_core(self, model_or_dir: str, device: torch.device) -> Tuple[AutoTokenizer, AutoModelForSeq2SeqLM]:
-        tokenizer = AutoTokenizer.from_pretrained(model_or_dir)
-        model = AutoModelForSeq2SeqLM.from_pretrained(model_or_dir).to(device)
+    def _loadSummarizerCore(self, modelOrDir: str, device: torch.device) -> Tuple[AutoTokenizer, AutoModelForSeq2SeqLM]:
+        tokenizer = AutoTokenizer.from_pretrained(modelOrDir)
+        model = AutoModelForSeq2SeqLM.from_pretrained(modelOrDir).to(device)
         return tokenizer, model
 
-    def load_summarizer(self, name: str, cache: Optional[str] = None) -> Tuple[AutoTokenizer, AutoModelForSeq2SeqLM, torch.device]:
+    def loadSummarizer(self, name: str, cache: Optional[str] = None) -> Tuple[AutoTokenizer, AutoModelForSeq2SeqLM, torch.device]:
         """
         Load Seq2Seq model; auto-download if cache dir missing or invalid.
         """
-        device = self._get_device()
+        device = self._getDevice()
         print(f"\n🔍 Initializing summarizer ({name}) on {device} ...")
-        self._cuda_check()
+        self._cudaCheck()
 
         if cache:
-            self._ensure_dir(cache)
-            if not self._has_hf_config(cache):
-                self._download_and_cache_summarizer(name, cache)
+            self._ensureDir(cache)
+            if not self._hasHfConfig(cache):
+                self._downloadAndCacheSummarizer(name, cache)
             print("📂 Loading summarizer from local cache...")
-            tok, mdl = self._load_summarizer_core(cache, device)
+            tok, mdl = self._loadSummarizerCore(cache, device)
         else:
             print("🌐 Loading summarizer directly from Hugging Face (no cache dir provided)...")
-            tok, mdl = self._load_summarizer_core(name, device)
+            tok, mdl = self._loadSummarizerCore(name, device)
 
         self.tokenizers["summarizer"] = tok
         self.models["summarizer"] = mdl
@@ -168,7 +168,7 @@ class ModelLoader:
     # Summarization helpers
     # -----------------------------
     @staticmethod
-    def _apply_vietnews_prefix(text: str, prefix: str, suffix: str) -> str:
+    def _applyVietnamPrefix(text: str, prefix: str, suffix: str) -> str:
         """
         For VietAI/vit5-vietnews: prefix 'vietnews: ' and suffix ' </s>'
         Safe for general T5-family; harmless for BART-family.
@@ -180,8 +180,8 @@ class ModelLoader:
 
     def summarize(self,
                   text: str,
-                  max_len: int = 256,
-                  min_len: int = 64,
+                  maxLen: int = 256,
+                  minLen: int = 64,
                   prefix: str = "vietnews: ",
                   suffix: str = " </s>") -> str:
         """
@@ -189,13 +189,13 @@ class ModelLoader:
         Raises RuntimeError if summarizer not loaded.
         """
         if "summarizer" not in self.models or "summarizer" not in self.tokenizers:
-            raise RuntimeError("❌ Summarizer not loaded. Call load_summarizer() first.")
+            raise RuntimeError("❌ Summarizer not loaded. Call loadSummarizer() first.")
 
         model: AutoModelForSeq2SeqLM = self.models["summarizer"]
         tokenizer: AutoTokenizer = self.tokenizers["summarizer"]
         device: torch.device = self.devices["summarizer"]
 
-        prepared = self._apply_vietnews_prefix(text, prefix, suffix)
+        prepared = self._applyVietnamPrefix(text, prefix, suffix)
         if not prepared:
             return ""
 
@@ -203,17 +203,17 @@ class ModelLoader:
             prepared,
             return_tensors="pt",
             truncation=True,
-            max_length=1024
+            maxLength=1024
         ).to(device)
 
         with torch.no_grad():
             outputs = model.generate(
                 **encoding,
-                max_length=max_len,
-                min_length=min_len,
-                num_beams=4,
-                no_repeat_ngram_size=3,
-                early_stopping=True
+                maxLength=maxLen,
+                minLength=minLen,
+                numBeams=4,
+                noRepeatNgramSize=3,
+                earlyStopping=True
             )
 
         summary = tokenizer.decode(
@@ -223,23 +223,23 @@ class ModelLoader:
         )
         return summary
 
-    def summarize_batch(self,
+    def summarizeBatch(self,
                         texts: List[str],
-                        max_len: int = 256,
-                        min_len: int = 64,
+                        maxLen: int = 256,
+                        minLen: int = 64,
                         prefix: str = "vietnews: ",
                         suffix: str = " </s>") -> List[str]:
         """
         Batch summarization. Processes in a single forward pass when possible.
         """
         if "summarizer" not in self.models or "summarizer" not in self.tokenizers:
-            raise RuntimeError("❌ Summarizer not loaded. Call load_summarizer() first.")
+            raise RuntimeError("❌ Summarizer not loaded. Call loadSummarizer() first.")
 
         model: AutoModelForSeq2SeqLM = self.models["summarizer"]
         tokenizer: AutoTokenizer = self.tokenizers["summarizer"]
         device: torch.device = self.devices["summarizer"]
 
-        batch = [self._apply_vietnews_prefix(t, prefix, suffix) for t in texts]
+        batch = [self._applyVietnamPrefix(t, prefix, suffix) for t in texts]
         batch = [b for b in batch if b]  # drop empties
         if not batch:
             return []
@@ -248,7 +248,7 @@ class ModelLoader:
             batch,
             return_tensors="pt",
             truncation=True,
-            max_length=1024,
+            maxLength=1024,
             padding=True
         ).to(device)
 
@@ -256,11 +256,11 @@ class ModelLoader:
         with torch.no_grad():
             outputs = model.generate(
                 **encoding,
-                max_length=max_len,
-                min_length=min_len,
-                num_beams=4,
-                no_repeat_ngram_size=3,
-                early_stopping=True
+                maxLength=maxLen,
+                minLength=minLen,
+                numBeams=4,
+                noRepeatNgramSize=3,
+                earlyStopping=True
             )
         for i in range(outputs.shape[0]):
             dec = tokenizer.decode(
@@ -274,7 +274,7 @@ class ModelLoader:
     # -----------------------------
     # Diagnostics
     # -----------------------------
-    def print_devices(self) -> None:
+    def printDevices(self) -> None:
         print("\n📊 Device summary:")
         for key, dev in self.devices.items():
             print(f"  - {key}: {dev}")

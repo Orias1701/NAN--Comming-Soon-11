@@ -27,25 +27,25 @@ def ConfigValues(pdfname="HNMU", service="Categories"):
     statusPath = f"{assetsFolder}/ex.status.json"
 
     # Documents
-    PdfFolder = f"./Documents"
-    PdfPath = f"{PdfFolder}/{pdfname}.pdf"
-        
-    # Database
-    DBPath = f"{dataFolder}/{pdfname}/{pdfname}"
+    pdfFolder = f"./Documents"
+    pdfPath = f"{pdfFolder}/{pdfname}.pdf"
 
-    RawExtractPath = f"{DBPath}_Extract"
-    ChunksPath = f"{DBPath}_Chunks"
-    EmbeddingPath = f"{DBPath}_Embedding"
-    RawDataPath = f"{RawExtractPath}_Raw.json"
-    RawLvlsPath = f"{RawExtractPath}_Levels.json"
-    StructsPath = f"{ChunksPath}_Struct.json"
-    SegmentPath = f"{ChunksPath}_Segment.json"
-    SchemaPath = f"{ChunksPath}_Schema.json"
-    FaissPath = f"{EmbeddingPath}_Index.faiss"
-    MappingPath = f"{EmbeddingPath}_Mapping.json"
-    MapDataPath = f"{EmbeddingPath}_MapData.json"
-    MapChunkPath = f"{EmbeddingPath}_MapChunk.json"
-    MetaPath = f"{EmbeddingPath}_Meta.json"
+    # Database
+    dbPath = f"{dataFolder}/{pdfname}/{pdfname}"
+
+    rawExtractPath = f"{dbPath}_Extract"
+    chunksPath = f"{dbPath}_Chunks"
+    embeddingPath = f"{dbPath}_Embedding"
+    rawDataPath = f"{rawExtractPath}_Raw.json"
+    rawLvlsPath = f"{rawExtractPath}_Levels.json"
+    structsPath = f"{chunksPath}_Struct.json"
+    segmentPath = f"{chunksPath}_Segment.json"
+    schemaPath = f"{chunksPath}_Schema.json"
+    faissPath = f"{embeddingPath}_Index.faiss"
+    mappingPath = f"{embeddingPath}_Mapping.json"
+    mapDataPath = f"{embeddingPath}_MapData.json"
+    mapChunkPath = f"{embeddingPath}_MapChunk.json"
+    metaPath = f"{embeddingPath}_Meta.json"
 
     # Keys
     DATA_KEY = "contents"
@@ -71,20 +71,20 @@ def ConfigValues(pdfname="HNMU", service="Categories"):
     WORD_LIMIT = 1000
 
     return {
-        "PdfPath": PdfPath,
+        "pdfPath": pdfPath,
         "exceptPath": exceptPath,
         "markerPath": markerPath,
         "statusPath": statusPath,
-        "RawDataPath": RawDataPath,
-        "RawLvlsPath": RawLvlsPath,
-        "StructsPath": StructsPath,
-        "SegmentPath": SegmentPath,
-        "SchemaPath": SchemaPath,
-        "FaissPath": FaissPath,
-        "MappingPath": MappingPath,
-        "MapDataPath": MapDataPath,
-        "MapChunkPath": MapChunkPath,
-        "MetaPath": MetaPath,
+        "rawDataPath": rawDataPath,
+        "rawLvlsPath": rawLvlsPath,
+        "structsPath": structsPath,
+        "segmentPath": segmentPath,
+        "schemaPath": schemaPath,
+        "faissPath": faissPath,
+        "mappingPath": mappingPath,
+        "mapDataPath": mapDataPath,
+        "mapChunkPath": mapChunkPath,
+        "metaPath": metaPath,
         "serviceSegmentPath": serviceSegmentPath,
         "serviceFaissPath": serviceFaissPath,
         "serviceMappingPath": serviceMappingPath,

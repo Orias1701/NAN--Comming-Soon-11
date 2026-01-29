@@ -1,10 +1,10 @@
 import json
 import re
 
-def merge_jsons(file1_path, file2_path, output_path):
+def mergeJsons(file1Path, file2Path, outputPath):
     # 1. Đọc dữ liệu từ 2 file
-    with open(file1_path, 'r', encoding='utf-8') as f1, \
-         open(file2_path, 'r', encoding='utf-8') as f2:
+    with open(file1Path, 'r', encoding='utf-8') as f1, \
+         open(file2Path, 'r', encoding='utf-8') as f2:
         data1 = json.load(f1)
         data2 = json.load(f2)
 
@@ -17,12 +17,12 @@ def merge_jsons(file1_path, file2_path, output_path):
     # Tách riêng các trường Level để sắp xếp theo số (Level 1, Level 2, Level 10...)
     level_keys = [k for k in all_keys if k.startswith('Level')]
     
-    def extract_level_number(key):
+    def extractLevelNumber(key):
         # Tìm số trong chuỗi "Level X", nếu không thấy trả về 0
         match = re.search(r'\d+', key)
         return int(match.group()) if match else 0
 
-    sorted_level_keys = sorted(level_keys, key=extract_level_number)
+    sorted_level_keys = sorted(level_keys, key=extractLevelNumber)
     
     # Xác định các trường cố định khác (trừ Index và Level)
     other_keys = [k for k in all_keys if k not in sorted_level_keys and k != 'Index']
@@ -49,10 +49,10 @@ def merge_jsons(file1_path, file2_path, output_path):
         final_json.append(new_item)
 
     # 6. Lưu file kết quả
-    with open(output_path, 'w', encoding='utf-8') as f_out:
+    with open(outputPath, 'w', encoding='utf-8') as f_out:
         json.dump(final_json, f_out, ensure_ascii=False, indent=4)
     
-    print(f"Đã gộp thành công vào file: {output_path}")
+    print(f"Đã gộp thành công vào file: {outputPath}")
 
 # --- Cách sử dụng ---
 

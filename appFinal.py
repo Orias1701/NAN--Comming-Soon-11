@@ -8,7 +8,7 @@ from Config import ModelLoader as ML
 from Libraries import Common_MyUtils as MU, Common_TextProcess as TP, Common_PdfProcess as PP
 from Libraries import PDF_QualityCheck as QualityCheck, PDF_ExtractData as ExtractData, PDF_MergeData as MergeData
 from Libraries import Json_ChunkUnder as ChunkUnder, Json_GetStructures as GetStructures, Json_ChunkMaster as ChunkMaster, Json_SchemaExt as SchemaExt
-from Libraries import Faiss_Embedding as F_Embedding, Faiss_Searching as F_Searching, Faiss_ChunkMapping as ChunkMapper
+from Libraries import Faiss_Embedding as F_Embedding, Faiss_Searching as F_Searching, Faiss_ChunkMapping as chunkMapper
 from Libraries import Summarizer_Runner as SummaryRun
 
 
@@ -19,8 +19,8 @@ from Libraries import Summarizer_Runner as SummaryRun
 #### HARD CODE
 service = "Categories"
 infilename = "HNMU"
-JsonKey = "paragraphs"
-JsonField = "Text"
+jsonKey = "paragraphs"
+jsonField = "Text"
 
 MODEL_DIR = "Models"
 MODEL_SUMARY = "Summarizer"
@@ -30,21 +30,21 @@ MODEL_ENCODE = "Sentence_Transformer"
 #### LOAD CONFIG
 config = Configs.ConfigValues(pdfname=infilename, service=service)
 
-PdfPath = config["PdfPath"]
+pdfPath = config["pdfPath"]
 exceptPath = config["exceptPath"]
 markerPath = config["markerPath"]
 statusPath = config["statusPath"]
 
-RawDataPath = config["RawDataPath"]
-RawLvlsPath = config["RawLvlsPath"]
-StructsPath = config["StructsPath"]
-SegmentPath = config["SegmentPath"]
-SchemaPath = config["SchemaPath"]
-FaissPath = config["FaissPath"]
-MappingPath = config["MappingPath"]
-MapDataPath = config["MapDataPath"]
-MapChunkPath = config["MapChunkPath"]
-MetaPath = config["MetaPath"]
+rawDataPath = config["rawDataPath"]
+rawLvlsPath = config["rawLvlsPath"]
+structsPath = config["structsPath"]
+segmentPath = config["segmentPath"]
+schemaPath = config["schemaPath"]
+faissPath = config["faissPath"]
+mappingPath = config["mappingPath"]
+mapDataPath = config["mapDataPath"]
+mapChunkPath = config["mapChunkPath"]
+metaPath = config["metaPath"]
 
 serviceSegmentPath = config["serviceSegmentPath"]
 serviceFaissPath = config["serviceFaissPath"]
@@ -83,8 +83,8 @@ BATCH_SIZE = 4
 ## ==============================
 
 #### FUNCTIONS
-def loadHardcodes(file_path, wanted=None):
-    data = MU.readJson(file_path)
+def loadHardcodes(filePath, wanted=None):
+    data = MU.readJson(filePath)
     if "items" not in data:
         return
     result = {}
@@ -112,10 +112,10 @@ Loader = ML.ModelLoader()
 
 
 #### LOAD MODELS
-indexer, embeddDevice = Loader.load_encoder(EMBEDD_MODEL, EMBEDD_CACHED_MODEL)
-# chunker, chunksDevice = Loader.load_encoder(CHUNKS_MODEL, CHUNKS_CACHED_MODEL)
+indexer, embeddDevice = Loader.loadEncoder(EMBEDD_MODEL, EMBEDD_CACHED_MODEL)
+# chunker, chunksDevice = Loader.loadEncoder(CHUNKS_MODEL, CHUNKS_CACHED_MODEL)
 
-tokenizer, summarizer, summaryDevice = Loader.load_summarizer(SUMARY_MODEL, SUMARY_CACHED_MODEL)
+tokenizer, summarizer, summaryDevice = Loader.loadSummarizer(SUMARY_MODEL, SUMARY_CACHED_MODEL)
 
 
 
@@ -131,7 +131,7 @@ dataExtractor = ExtractData.B1Extractor(
     exceptData,
     markerData,
     statusData,
-    proper_name_min_count=10
+    properNameMinCount=10
 )
 
 merger = MergeData.ParagraphMerger()
@@ -145,7 +145,7 @@ structAnalyzer = GetStructures.StructureAnalyzer(
 chunkBuilder = ChunkMaster.ChunkBuilder()
 
 schemaExt = SchemaExt.JSONSchemaExtractor(
-    list_policy="first", 
+    listPolicy="first", 
     verbose=True
 )
 
@@ -169,10 +169,10 @@ faissIndexer = F_Embedding.DirectFaissIndexer(
 chunkUnder = ChunkUnder.ChunkUndertheseaBuilder(
     embedder=indexer,
     device=embeddDevice,
-    min_words=256,
-    max_words=768,
-    sim_threshold=0.7,
-    key_sent_ratio=0.4
+    minWords=256,
+    maxWords=768,
+    simThreshold=0.7,
+    keySentRatio=0.4
 )
 
 
@@ -180,11 +180,11 @@ chunkUnder = ChunkUnder.ChunkUndertheseaBuilder(
 summaryEngine = SummaryRun.RecursiveSummarizer(
     tokenizer=tokenizer,
     summarizer=summarizer,
-    sum_device=summaryDevice,
-    chunk_builder=chunkUnder,
-    max_length=200,
-    min_length=100,
-    max_depth=4
+    sumDevice=summaryDevice,
+    chunkBuilder=chunkUnder,
+    maxLength=200,
+    minLength=100,
+    maxDepth=4
 )
 
 
@@ -195,9 +195,9 @@ searchEngine = F_Searching.SemanticSearchEngine(
     reranker=reranker,
     device=str(embeddDevice),
     normalize=True,
-    top_k=20,
-    rerank_k=10,
-    rerank_batch_size=16
+    topK=20,
+    rerankK=10,
+    rerankBatchSize=16
 )
 
 
@@ -210,46 +210,46 @@ searchEngine = F_Searching.SemanticSearchEngine(
 ### PREPROCESS
 
 #### CHECKER
-def pdfCheck(pdf_doc):
-    is_good, metrics = checker.evaluate(pdf_doc)
-    return is_good, metrics
+def pdfCheck(pdfDoc):
+    isGood, metrics = checker.evaluate(pdfDoc)
+    return isGood, metrics
 
 
 #### EXTRACTOR
-def extractRun(pdf_doc):
-    extractedData = dataExtractor.extract(pdf_doc)
-    RawDataDict = merger.merge(extractedData)
-    return RawDataDict
+def extractRun(pdfDoc):
+    extractedData = dataExtractor.extract(pdfDoc)
+    rawDataDict = merger.merge(extractedData)
+    return rawDataDict
 
 
 
 ### PROCESS FOR SEARCHING
 
 #### STRUCT GETTER
-def structRun(RawDataDict):
-    markers =       structAnalyzer.extract_markers(RawDataDict)
-    structures =    structAnalyzer.build_structures(markers)
+def structRun(rawDataDict):
+    markers =       structAnalyzer.extractMarkers(rawDataDict)
+    structures =    structAnalyzer.buildStructures(markers)
     dedup =         structAnalyzer.deduplicate(structures)
-    top =           structAnalyzer.select_top(dedup)
-    RawLvlsDict =   structAnalyzer.extend_top(top, dedup)
+    top =           structAnalyzer.selectTop(dedup)
+    rawLvlsDict =   structAnalyzer.extendTop(top, dedup)
     
-    print(MU.jsonConvert(RawLvlsDict, pretty=True))
-    return RawLvlsDict
+    print(MU.jsonConvert(rawLvlsDict, pretty=True))
+    return rawLvlsDict
 
 
 #### STRUCT CHUNKER
-def chunkRun(RawLvlsDict=None, RawDataDict=None):
-    StructsDict = chunkBuilder.build(RawLvlsDict, RawDataDict)
+def chunkRun(RawLvlsDict=None, rawDataDict=None):
+    StructsDict = chunkBuilder.build(RawLvlsDict, rawDataDict)
     return StructsDict
 
 
 #### SEGMENT CHUNKER
 def SegmentRun(StructsDict, RawLvlsDict):
-    first_key = list(RawLvlsDict[0].keys())[0]
+    firstKey = list(RawLvlsDict[0].keys())[0]
 
-    SegmentDict = []
+    segmentDict = []
     for item in StructsDict:
-        value = item.get(first_key)
+        value = item.get(firstKey)
         if not value:
             continue
         
@@ -259,50 +259,50 @@ def SegmentRun(StructsDict, RawLvlsDict):
                 if isinstance(v, str) and v.strip().lower() != "none"
             )
             if value.strip():
-                SegmentDict.append(item)
+                segmentDict.append(item)
 
         elif isinstance(value, str):
             text = value.strip()
             if text and text.lower() != "none":
-                SegmentDict.append(item)
+                segmentDict.append(item)
 
-    for i, item in enumerate(SegmentDict, start=1):
+    for i, item in enumerate(segmentDict, start=1):
         item["Index"] = i
 
-    return SegmentDict
+    return segmentDict
 
 
 #### SCHEMA GETTER
-def schemaRun(SegmentDict):
-    SchemaDict = schemaExt.schemaRun(SegmentDict=SegmentDict)
-    print(SchemaDict)
-    return SchemaDict
+def schemaRun(segmentDict):
+    schemaDict = schemaExt.schemaRun(segmentDict=segmentDict)
+    print(schemaDict)
+    return schemaDict
 
 
 #### INDEXER
-def Indexing(SchemaDict):
-    FaissIndex, Mapping, MapData, chunk_groups = faissIndexer.build_from_json(
-        SegmentPath=SegmentPath,
-        SchemaDict=SchemaDict,
-        FaissPath=FaissPath,
-        MapDataPath=MapDataPath,
-        MappingPath=MappingPath,
-        MapChunkPath=MapChunkPath
+def Indexing(schemaDict):
+    faissIndex, mapping, mapData, chunkGroups = faissIndexer.buildFromJson(
+        segmentPath=segmentPath,
+        schemaDict=schemaDict,
+        faissPath=faissPath,
+        mapDataPath=mapDataPath,
+        mappingPath=mappingPath,
+        mapChunkPath=mapChunkPath
     )
-    return FaissIndex, Mapping, MapData, chunk_groups
+    return faissIndex, mapping, mapData, chunkGroups
 
 
 ### PROCESS FOR CLASSIFICATION
 
 #### RAW MERGER
-def mergebyText(RawDataDict):
-    merged_text = TP.mergeTxt(RawDataDict, JsonKey, JsonField)
-    return merged_text
+def mergebyText(rawDataDict):
+    mergedText = TP.mergeTxt(rawDataDict, jsonKey, jsonField)
+    return mergedText
 
 
 #### SUMMARIZER
-def summaryRun(merged_text):
-    summarized = summaryEngine.summarize(merged_text, minInput = 256, maxInput = 1024)
+def summaryRun(mergedText):
+    summarized = summaryEngine.summarize(mergedText, minInput = 256, maxInput = 1024)
     return summarized
 
 
@@ -310,14 +310,14 @@ def summaryRun(merged_text):
 ### FINAL PROCESS
 
 #### SEARCHER
-def runSearch(query, faissIndex, Mapping, MapData, MapChunk):
+def runSearch(query, faissIndex, mapping, mapData, mapChunk):
     results = searchEngine.search(
         query=query,
         faissIndex=faissIndex,
-        Mapping=Mapping,
-        MapData=MapData,
-        MapChunk=MapChunk,
-        top_k=20
+        mapping=mapping,
+        mapData=mapData,
+        mapChunk=mapChunk,
+        topK=20
     )
     return results
 
@@ -327,7 +327,7 @@ def runRerank(query, results):
     reranked = searchEngine.rerank(
         query=query,
         results=results,
-        top_k=10
+        topK=10
     )
     return reranked
 
@@ -339,108 +339,114 @@ def runRerank(query, results):
 ## ==============================
 
 #### READ DATA
-def ReadData(SegmentPath, FaissPath, MappingPath, MapDataPath, MapChunkPath):
-    SegmentDict = MU.readJson(SegmentPath)
-    FaissIndex = faiss.read_index(FaissPath)
-    Mapping = MU.readJson(MappingPath)
-    MapData = MU.readJson(MapDataPath)
-    MapChunk = MU.readJson(MapChunkPath)
+def ReadData(segmentPath, faissPath, mappingPath, mapDataPath, mapChunkPath):
+    segmentDict = MU.readJson(segmentPath)
+    faissIndex = faiss.read_index(faissPath)
+    mapping = MU.readJson(mappingPath)
+    mapData = MU.readJson(mapDataPath)
+    mapChunk = MU.readJson(mapChunkPath)
     return {
-        "SegmentDict": SegmentDict,
-        "FaissIndex": FaissIndex,
-        "Mapping": Mapping,
-        "MapData": MapData,
-        "MapChunk": MapChunk
+        "segmentDict": segmentDict,
+        "faissIndex": faissIndex,
+        "mapping": mapping,
+        "mapData": mapData,
+        "mapChunk": mapChunk
     }
     
 
 #### READ PDF
-def preReadPDF(PdfPath=None, PdfBytes=None):
-    if PdfBytes is not None:
-        pdf_doc = fitz.open(stream=PdfBytes, filetype="pdf")
-    elif PdfPath is not None:
-        pdf_doc = fitz.open(PdfPath)
+def preReadPDF(pdfPath=None, pdfBytes=None):
+    if pdfBytes is not None:
+        pdfDoc = fitz.open(stream=pdfBytes, filetype="pdf")
+    elif pdfPath is not None:
+        pdfDoc = fitz.open(pdfPath)
     else:
         return None
     
     checker = QualityCheck.PDFQualityChecker()
-    is_good, info = checker.evaluate(pdf_doc)
+    is_good, info = checker.evaluate(pdfDoc)
     print(info)
     if is_good:
         print("[PASS] Tiếp tục xử lý.")
     else:
         print("[DENY] Bỏ qua file này.")
-        pdf_doc.close()
+        pdfDoc.close()
         return None
         
-    RawDataDict = extractRun(pdf_doc)
-    MU.writeJson(RawDataDict, RawDataPath, indent=1)
-    pdf_doc.close()
+    rawDataDict = extractRun(pdfDoc)
+    MU.writeJson(rawDataDict, rawDataPath, indent=1)
+    pdfDoc.close()
     
-    return RawDataDict
+    return rawDataDict
 
 
 #### PREPARE DATA
-def PrepareData(SegmentPath, FaissPath, MappingPath, MapDataPath, MapChunkPath, RawDataDict=None):            
-    if RawDataDict is not None:
-        RawLvlsDict = structRun(RawDataDict)
-        MU.writeJson(RawLvlsDict, RawLvlsPath, indent=2)
+def PrepareData(segmentPath, faissPath, mappingPath, mapDataPath, mapChunkPath, rawDataDict=None):            
+    if rawDataDict is not None:
+        RawLvlsDict = structRun(rawDataDict)
+        MU.writeJson(RawLvlsDict, rawLvlsPath, indent=2)
 
-        StructsDict = chunkRun(RawLvlsDict, RawDataDict)
-        MU.writeJson(StructsDict, StructsPath, indent=2)
+        StructsDict = chunkRun(RawLvlsDict, rawDataDict)
+        MU.writeJson(StructsDict, structsPath, indent=2)
 
-        SegmentDict = SegmentRun(StructsDict, RawLvlsDict)
-        MU.writeJson(SegmentDict, SegmentPath, indent=2)
+        segmentDict = SegmentRun(StructsDict, RawLvlsDict)
+        MU.writeJson(segmentDict, segmentPath, indent=2)
         
-    elif MU.fileExists(SegmentPath):
-        SegmentDict = MU.readJson(SegmentPath)
+    elif MU.fileExists(segmentPath):
+        segmentDict = MU.readJson(segmentPath)
         
     else :
-        return None, None, None, None, None
+        return {
+            "segmentDict": None,
+            "faissIndex": None,
+            "mapping": None,
+            "mapData": None,
+            "mapChunk": None
+        }
     
-    SchemaDict = schemaRun(SegmentDict)
-    MU.writeJson(SchemaDict, SchemaPath, indent=2)
+    schemaDict = schemaRun(segmentDict)
+    MU.writeJson(schemaDict, schemaPath, indent=2)
 
-    FaissIndex, Mapping, MapData, chunk_groups = Indexing(SchemaDict)
-    MU.writeJson(Mapping, MappingPath, indent=2)
-    MU.writeJson(MapData, MapDataPath, indent=2)
+    faissIndex, mapping, mapData, chunkGroups = Indexing(schemaDict)
+    MU.writeJson(mapping, mappingPath, indent=2)
+    MU.writeJson(mapData, mapDataPath, indent=2)
     
-    faiss.write_index(FaissIndex, FaissPath)
-    MU.writeChunkmap(MapChunkPath, SegmentPath, chunk_groups)
-    MapChunk = MU.readJson(MapChunkPath)
+    faiss.write_index(faissIndex, faissPath)
+    MU.writeChunkmap(mapChunkPath, segmentPath, chunkGroups)
+    mapChunk = MU.readJson(mapChunkPath)
     
     print("\nCompleted!")
     
     return {
-        "SegmentDict": SegmentDict,
-        "FaissIndex": FaissIndex,
-        "Mapping": Mapping,
-        "MapData": MapData,
-        "MapChunk": MapChunk
+        "segmentDict": segmentDict,
+        "faissIndex": faissIndex,
+        "mapping": mapping,
+        "mapData": mapData,
+        "mapChunk": mapChunk
     }
     
 
 #### SUMMARIZE
-def summarizeDcmt(RawDataDict):
-    merged_text = mergebyText(RawDataDict)
-    summarized = summaryRun(merged_text)
-    return summarized["summary_text"]
+def summarizeDcmt(rawDataDict):
+    mergedText = mergebyText(rawDataDict)
+    summarized = summaryRun(mergedText)
+    return summarized["summaryText"]
 
 
 #### CLASSIFY
 def classifyDocument(summaryText):
     readedData = ReadData(serviceSegmentPath, serviceFaissPath, serviceMappingPath, serviceMapDataPath, serviceMapChunkPath)
-    serviceSegmentDict = readedData.get("SegmentDict")
-    serviceFaissIndex = readedData.get("FaissIndex")
-    serviceMapping = readedData.get("Mapping")
-    serviceMapData = readedData.get("MapData")
-    serviceMapChunk = readedData.get("MapChunk")
+    serviceSegmentDict = readedData.get("segmentDict")
+    serviceFaissIndex = readedData.get("faissIndex")
+    serviceMapping = readedData.get("mapping")
+    serviceMapData = readedData.get("mapData")
+    serviceMapChunk = readedData.get("mapChunk")
     
     searchRes = runSearch(summaryText, serviceFaissIndex, serviceMapping, serviceMapData, serviceMapChunk)
     reranked = runRerank(summaryText, searchRes)
     
-    bestCategory = ChunkMapper.process_chunks_pipeline(reranked_results=reranked, SegmentDict=serviceSegmentDict, drop_fields=["Index"], fields=["Article"], n_chunks=1)
-    bestArticles = [item["fields"].get("Article") for item in bestCategory["extracted_fields"]]
+    bestCategory = chunkMapper.processChunksPipeline(rerankedResults=reranked, segmentDict=serviceSegmentDict, dropFields=["Index"], fields=["Article"], nChunks=1)
+    bestArticles = [item["fields"].get("Article") for item in bestCategory["extractedFields"]]
     bestArticle = bestArticles[0] if len(bestArticles) == 1 else ", ".join(bestArticles)
     return bestArticle
 
@@ -452,41 +458,39 @@ def classifyDocument(summaryText):
 ## ==============================
 print("Server is starting, loading main search index...")
 try:
-    # Tải dữ liệu chính (HNMU) để tìm kiếm
-    g_readedData = ReadData(SegmentPath, FaissPath, MappingPath, MapDataPath, MapChunkPath)
-    g_SegmentDict = g_readedData.get("SegmentDict")
-    g_FaissIndex = g_readedData.get("FaissIndex")
-    g_Mapping = g_readedData.get("Mapping")
-    g_MapData = g_readedData.get("MapData")
-    g_MapChunk = g_readedData.get("MapChunk")
+    gReadedData = ReadData(segmentPath, faissPath, mappingPath, mapDataPath, mapChunkPath)
+    gSegmentDict = gReadedData.get("segmentDict")
+    gFaissIndex = gReadedData.get("faissIndex")
+    gMapping = gReadedData.get("mapping")
+    gMapData = gReadedData.get("mapData")
+    gMapChunk = gReadedData.get("mapChunk")
     
-    if g_FaissIndex:
+    if gFaissIndex:
         print(f"[SUCCESS] Main search index '{infilename}' loaded successfully.")
     else:
-        print(f"[FAILED] Could not load main search index from {FaissPath}.")
+        print(f"[FAILED] Could not load main search index from {faissPath}.")
         
 except Exception as e:
     print(f"[CRITICAL] Failed to load main search index: {e}")
-    g_FaissIndex = None
+    gFaissIndex = None
 
-# Tải dữ liệu 'service' (Categories) để phân loại
 print("Loading 'Categories' index for classification...")
 try:
-    g_serviceData = ReadData(serviceSegmentPath, serviceFaissPath, serviceMappingPath, serviceMapDataPath, serviceMapChunkPath)
-    g_serviceSegmentDict = g_serviceData.get("SegmentDict")
-    g_serviceFaissIndex = g_serviceData.get("FaissIndex")
-    g_serviceMapping = g_serviceData.get("Mapping")
-    g_serviceMapData = g_serviceData.get("MapData")
-    g_serviceMapChunk = g_serviceData.get("MapChunk")
+    gServiceData = ReadData(serviceSegmentPath, serviceFaissPath, serviceMappingPath, serviceMapDataPath, serviceMapChunkPath)
+    gServiceSegmentDict = gServiceData.get("segmentDict")
+    gServiceFaissIndex = gServiceData.get("faissIndex")
+    gServiceMapping = gServiceData.get("mapping")
+    gServiceMapData = gServiceData.get("mapData")
+    gServiceMapChunk = gServiceData.get("mapChunk")
     
-    if g_serviceFaissIndex:
+    if gServiceFaissIndex:
         print("[SUCCESS] 'Categories' index loaded successfully.")
     else:
         print("[FAILED] Could not load 'Categories' index.")
 
 except Exception as e:
     print(f"[CRITICAL] Failed to load 'Categories' index: {e}")
-    g_serviceFaissIndex = None
+    gServiceFaissIndex = None
 
 
 
@@ -495,15 +499,15 @@ except Exception as e:
 ## API PIPELINE FUNCTIONS
 ## ==============================
 
-def process_pdf_pipeline(pdf_bytes):
+def processPdfPipeline(pdf_bytes):
     """
     Pipeline cho endpoint /process_pdf.
     Nhận PDF bytes -> tóm tắt -> phân loại.
     """
     print("Processing new PDF...")
     # 1. Trích xuất
-    RawDataDict = preReadPDF(PdfPath=None, PdfBytes=pdf_bytes)
-    if RawDataDict is None:
+    rawDataDict = preReadPDF(pdfPath=None, pdfBytes=pdf_bytes)
+    if rawDataDict is None:
         print("PDF quality check failed or extraction failed.")
         return {
             "checkstatus": "failed",
@@ -513,26 +517,24 @@ def process_pdf_pipeline(pdf_bytes):
 
     # 2. Tóm tắt
     print("Summarizing PDF...")
-    summaryText = summarizeDcmt(RawDataDict)
+    summaryText = summarizeDcmt(rawDataDict)
     
-    # 3. Phân loại (sử dụng global index 'service')
     print("Classifying PDF...")
-    if not g_serviceFaissIndex:
+    if not gServiceFaissIndex:
         print("Cannot classify: 'Categories' index not loaded.")
         bestArticle = "Không thể phân loại (chưa tải index)"
     else:
-        # Tái sử dụng hàm classifyDocument nhưng truyền index vào
-        searchRes = runSearch(summaryText, g_serviceFaissIndex, g_serviceMapping, g_serviceMapData, g_serviceMapChunk)
+        searchRes = runSearch(summaryText, gServiceFaissIndex, gServiceMapping, gServiceMapData, gServiceMapChunk)
         reranked = runRerank(summaryText, searchRes)
         
-        bestCategory = ChunkMapper.process_chunks_pipeline(
-            reranked_results=reranked, 
-            SegmentDict=g_serviceSegmentDict, 
-            drop_fields=["Index"], 
+        bestCategory = chunkMapper.processChunksPipeline(
+            rerankedResults=reranked, 
+            segmentDict=gServiceSegmentDict, 
+            dropFields=["Index"], 
             fields=["Article"], 
-            n_chunks=1
+            nChunks=1
         )
-        bestArticles = [item["fields"].get("Article") for item in bestCategory["extracted_fields"]]
+        bestArticles = [item["fields"].get("Article") for item in bestCategory["extractedFields"]]
         bestArticle = bestArticles[0] if bestArticles else "Không xác định"
 
     print(f"Done. Summary: {len(summaryText)} chars, Category: {bestArticle}")
@@ -543,27 +545,25 @@ def process_pdf_pipeline(pdf_bytes):
     }
 
 
-def search_pipeline(query_text, k=10):
+def searchPipeline(queryText, k=10):
     """
     Pipeline cho endpoint /search.
     Nhận query -> tìm kiếm trên index chính (HNMU).
     """
-    print(f"Searching for: '{query_text}'")
-    if not g_FaissIndex:
+    print(f"Searching for: '{queryText}'")
+    if not gFaissIndex:
         print("Cannot search: Main index not loaded.")
         raise Exception("Không thể tìm kiếm (chưa tải index chính)")
 
-    # 1. Search và Rerank
-    searchRes = runSearch(query_text, g_FaissIndex, g_Mapping, g_MapData, g_MapChunk)
-    reranked = runRerank(query_text, searchRes)
+    searchRes = runSearch(queryText, gFaissIndex, gMapping, gMapData, gMapChunk)
+    reranked = runRerank(queryText, searchRes)
 
-    # 2. Map chunks và trích xuất
-    chunkReturn = ChunkMapper.process_chunks_pipeline(
-        reranked_results=reranked,
-        SegmentDict=g_SegmentDict,
-        drop_fields=["Index"],
+    chunkReturn = chunkMapper.processChunksPipeline(
+        rerankedResults=reranked,
+        segmentDict=gSegmentDict,
+        dropFields=["Index"],
         fields=None,
-        n_chunks=k,
+        nChunks=k,
     )
     
-    return chunkReturn.get("extracted_fields", [])
+    return chunkReturn.get("extractedFields", [])

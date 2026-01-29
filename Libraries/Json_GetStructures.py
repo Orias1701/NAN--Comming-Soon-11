@@ -8,11 +8,11 @@ class StructureAnalyzer:
         self.verbose = verbose
 
     # ---------------- B1 ---------------- #
-    def extract_markers(self, RawDataDict) -> List[str]:
+    def extractMarkers(self, rawDataDict) -> List[str]:
         bullet_pattern = re.compile(r"^\s*[-•●♦▪‣–—]+\s*$")
 
-        paragraphs = RawDataDict.get("paragraphs", [])
-        common_markers = set(RawDataDict.get("general", {}).get("commonMarkers", []))
+        paragraphs = rawDataDict.get("paragraphs", [])
+        common_markers = set(rawDataDict.get("general", {}).get("commonMarkers", []))
 
         raw_markers: List[Any] = []
         for p in paragraphs:
@@ -39,15 +39,15 @@ class StructureAnalyzer:
         return cleaned
 
     # ---------------- B2 ---------------- #
-    def build_structures(self, markers: List[str]) -> List[Dict[str, Any]]:
+    def buildStructures(self, markers: List[str]) -> List[Dict[str, Any]]:
         unique_markers = list(dict.fromkeys(markers))
         counter1 = Counter(markers)
         results = [{"Depth": 1, "Structure": [m], "Count": counter1[m]} for m in unique_markers]
 
-        max_depth = len(unique_markers)
+        maxDepth = len(unique_markers)
         prev_structures = set((m,) for m in unique_markers)
 
-        for i in range(2, max_depth + 1):
+        for i in range(2, maxDepth + 1):
             counter = Counter()
             for j in range(len(markers) - i + 1):
                 seq_raw = tuple(markers[j:j+i])
@@ -98,12 +98,12 @@ class StructureAnalyzer:
         return filtered
 
     # ---------------- B4 ---------------- #
-    def select_top(self, dedup: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def selectTop(self, dedup: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         if not dedup:
             return []
 
-        max_depth = max(item["Depth"] for item in dedup)
-        at_max = [x for x in dedup if x["Depth"] == max_depth]
+        maxDepth = max(item["Depth"] for item in dedup)
+        at_max = [x for x in dedup if x["Depth"] == maxDepth]
         max_count = max(x["Count"] for x in at_max)
         top = [x for x in at_max if x["Count"] == max_count]
 
@@ -120,7 +120,7 @@ class StructureAnalyzer:
 
         return result
 
-    def level_rank(level: str) -> int:
+    def levelRank(level: str) -> int:
         """Quy đổi level thành số để so sánh"""
         if level == "Contents":
             return 9999  # Contents coi như cao nhất
@@ -131,7 +131,7 @@ class StructureAnalyzer:
                 return 0
         return 0
 
-    def extend_top(self, top: List[Dict[str, Any]], dedup: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def extendTop(self, top: List[Dict[str, Any]], dedup: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
         Mở rộng top bằng cách thêm tail từ dedup:
         - Nếu Contents: chỉ giữ tail == ['none']
