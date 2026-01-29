@@ -61,12 +61,11 @@ class DirectFaissIndexer:
 
     # ---------- Tiền xử lý & flatten ----------
     def _preprocess_data(self, data: Any) -> Any:
-
-        if MyUtils and hasattr(MyUtils, "preprocess_data"):
-            return MyUtils.preprocess_data(
+        if MyUtils and hasattr(MyUtils, "preprocessData"):
+            return MyUtils.preprocessData(
                 data,
-                non_keep_pattern=self._non_keep_pattern,
-                max_chars_per_text=self.max_chars_per_text
+                nonKeepPattern=self._non_keep_pattern,
+                maxCharsPerText=self.max_chars_per_text
             )
 
     def _flatten_json(self, data: Any) -> Dict[str, Any]:
@@ -91,12 +90,11 @@ class DirectFaissIndexer:
 
             data = _merge_lists(data)
 
-        # Sau đó gọi MyUtils.flatten_json như cũ
-        return MyUtils.flatten_json(
+        return MyUtils.flattenJson(
             data,
             prefix="",
-            flatten_mode=self.flatten_mode,
-            join_sep=self.join_sep
+            flattenMode=self.flatten_mode,
+            joinSep=self.join_sep
         )
 
     # ---------- Encode (batch) với fallback OOM CPU ----------
@@ -204,7 +202,7 @@ class DirectFaissIndexer:
         schema = SchemaDict
 
         # 1️⃣ Read JSON
-        data_obj = MyUtils.read_json(SegmentPath)
+        data_obj = MyUtils.readJson(SegmentPath)
         data_list = data_obj if isinstance(data_obj, list) else [data_obj]
 
         # 2️⃣ Flatten + lưu chunk_id

@@ -13,7 +13,7 @@ from pydantic import BaseModel
 # -------------------------
 # 🔒 Bearer token (optional)
 # -------------------------
-# Đặt biến môi trường API_SECRET=your_secret_token để bật
+
 API_SECRET = os.getenv("API_SECRET", "").strip() 
 
 def require_bearer(authorization: Optional[str] = Header(None)):
@@ -37,8 +37,7 @@ try:
 except Exception as e:
     APP_CALLED = None
     print(f"⚠️ CRITICAL: Không thể import appFinal: {e}")
-    # Nếu không import được, server sẽ không hoạt động
-    # raise e # Bỏ comment dòng này nếu muốn server dừng hẳn khi lỗi
+    raise e
 
 # -------------------------
 # 🚀 Init FastAPI
@@ -52,7 +51,7 @@ app = FastAPI(
 # Cho phép gọi API từ web client (CORS)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Cho phép tất cả
+    allow_origins=["*"], # All
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

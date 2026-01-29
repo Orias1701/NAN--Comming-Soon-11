@@ -11,7 +11,7 @@ DOCKER_PATH = r"C:\Program Files\Docker\Docker\Docker Desktop.exe"
 
 BASE = Path(getattr(sys, "_MEIPASS", Path(__file__).parent))
 CONFIG = BASE/"Config"/"config.json"
-cfg = MU.read_json(CONFIG)
+cfg = MU.readJson(CONFIG)
 
 model_dir = cfg['paths']['local_model_dir']
 model_typ = cfg['paths']['local_model_typ']

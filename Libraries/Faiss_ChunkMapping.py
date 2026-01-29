@@ -111,7 +111,7 @@ def extract_chunks_from_rerank_flexible(
     return out
 
 
-def collect_chunk_text(chunks: List[Dict[str, Any]]) -> str:
+def collectChunkText(chunks: List[Dict[str, Any]]) -> str:
     """Biến toàn bộ danh sách chunk thành text (bỏ key, split dòng)."""
     if not chunks:
         return "(Không có chunk nào)"
@@ -172,7 +172,7 @@ def process_chunks_pipeline(
     )
 
     # 2️⃣ Biến thành text (cùng số lượng chunk)
-    chunks_text = collect_chunk_text(chunks_json)
+    chunks_text = collectChunkText(chunks_json)
 
     # 3️⃣ Lấy các trường cụ thể
     extracted_fields = extract_fields_for_each_chunk(chunks_json, fields=fields)

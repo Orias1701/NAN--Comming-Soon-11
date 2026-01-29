@@ -135,11 +135,11 @@ def setPageCoords(lines, pageGeneralSize):
     y0s = [round(l["Coords"]["Y0"], 1) for l in lines]
     y1s = [round(l["Coords"]["Y1"], 1) for l in lines]
 
-    xStart = MyUtils.most_common(x0s)
-    page_width = pageGeneralSize[1]
-    threshold = page_width * 0.75
-    x1_candidates = [x for x in x1s if x >= threshold]
-    xEnd = MyUtils.most_common(x1_candidates) if x1_candidates else max(x1s)
+    xStart = MyUtils.mostCommon(x0s)
+    pageWidth = pageGeneralSize[1]
+    threshold = pageWidth * 0.75
+    x1Candidates = [x for x in x1s if x >= threshold]
+    xEnd = MyUtils.mostCommon(x1Candidates) if x1Candidates else max(x1s)
 
     yStart = min(y0s)
     yEnd = max(y1s)

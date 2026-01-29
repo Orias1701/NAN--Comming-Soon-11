@@ -18,7 +18,7 @@ from Libraries import Summarizer_Runner as SummaryRun
 
 #### HARD CODE
 service = "Categories"
-infilename = "HNMU_Merged"
+infilename = "HNMU"
 JsonKey = "paragraphs"
 JsonField = "Text"
 
@@ -84,7 +84,7 @@ BATCH_SIZE = 4
 
 #### FUNCTIONS
 def loadHardcodes(file_path, wanted=None):
-    data = MU.read_json(file_path)
+    data = MU.readJson(file_path)
     if "items" not in data:
         return
     result = {}
@@ -233,7 +233,7 @@ def structRun(RawDataDict):
     top =           structAnalyzer.select_top(dedup)
     RawLvlsDict =   structAnalyzer.extend_top(top, dedup)
     
-    print(MU.json_convert(RawLvlsDict, pretty=True))
+    print(MU.jsonConvert(RawLvlsDict, pretty=True))
     return RawLvlsDict
 
 
@@ -296,7 +296,7 @@ def Indexing(SchemaDict):
 
 #### RAW MERGER
 def mergebyText(RawDataDict):
-    merged_text = TP.merge_txt(RawDataDict, JsonKey, JsonField)
+    merged_text = TP.mergeTxt(RawDataDict, JsonKey, JsonField)
     return merged_text
 
 
@@ -340,11 +340,11 @@ def runRerank(query, results):
 
 #### READ DATA
 def ReadData(SegmentPath, FaissPath, MappingPath, MapDataPath, MapChunkPath):
-    SegmentDict = MU.read_json(SegmentPath)
+    SegmentDict = MU.readJson(SegmentPath)
     FaissIndex = faiss.read_index(FaissPath)
-    Mapping = MU.read_json(MappingPath)
-    MapData = MU.read_json(MapDataPath)
-    MapChunk = MU.read_json(MapChunkPath)
+    Mapping = MU.readJson(MappingPath)
+    MapData = MU.readJson(MapDataPath)
+    MapChunk = MU.readJson(MapChunkPath)
     return {
         "SegmentDict": SegmentDict,
         "FaissIndex": FaissIndex,
@@ -367,14 +367,14 @@ def preReadPDF(PdfPath=None, PdfBytes=None):
     is_good, info = checker.evaluate(pdf_doc)
     print(info)
     if is_good:
-        print("✅ Tiếp tục xử lý.")
+        print("[PASS] Tiếp tục xử lý.")
     else:
-        print("⚠️ Bỏ qua file này.")
+        print("[DENY] Bỏ qua file này.")
         pdf_doc.close()
         return None
         
     RawDataDict = extractRun(pdf_doc)
-    MU.write_json(RawDataDict, RawDataPath, indent=1)
+    MU.writeJson(RawDataDict, RawDataPath, indent=1)
     pdf_doc.close()
     
     return RawDataDict
@@ -384,30 +384,30 @@ def preReadPDF(PdfPath=None, PdfBytes=None):
 def PrepareData(SegmentPath, FaissPath, MappingPath, MapDataPath, MapChunkPath, RawDataDict=None):            
     if RawDataDict is not None:
         RawLvlsDict = structRun(RawDataDict)
-        MU.write_json(RawLvlsDict, RawLvlsPath, indent=2)
+        MU.writeJson(RawLvlsDict, RawLvlsPath, indent=2)
 
         StructsDict = chunkRun(RawLvlsDict, RawDataDict)
-        MU.write_json(StructsDict, StructsPath, indent=2)
+        MU.writeJson(StructsDict, StructsPath, indent=2)
 
         SegmentDict = SegmentRun(StructsDict, RawLvlsDict)
-        MU.write_json(SegmentDict, SegmentPath, indent=2)
+        MU.writeJson(SegmentDict, SegmentPath, indent=2)
         
-    elif MU.file_exists(SegmentPath):
-        SegmentDict = MU.read_json(SegmentPath)
+    elif MU.fileExists(SegmentPath):
+        SegmentDict = MU.readJson(SegmentPath)
         
     else :
         return None, None, None, None, None
     
     SchemaDict = schemaRun(SegmentDict)
-    MU.write_json(SchemaDict, SchemaPath, indent=2)
+    MU.writeJson(SchemaDict, SchemaPath, indent=2)
 
     FaissIndex, Mapping, MapData, chunk_groups = Indexing(SchemaDict)
-    MU.write_json(Mapping, MappingPath, indent=2)
-    MU.write_json(MapData, MapDataPath, indent=2)
+    MU.writeJson(Mapping, MappingPath, indent=2)
+    MU.writeJson(MapData, MapDataPath, indent=2)
     
     faiss.write_index(FaissIndex, FaissPath)
-    MU.write_chunkmap(MapChunkPath, SegmentPath, chunk_groups)
-    MapChunk = MU.read_json(MapChunkPath)
+    MU.writeChunkmap(MapChunkPath, SegmentPath, chunk_groups)
+    MapChunk = MU.readJson(MapChunkPath)
     
     print("\nCompleted!")
     
@@ -461,12 +461,12 @@ try:
     g_MapChunk = g_readedData.get("MapChunk")
     
     if g_FaissIndex:
-        print(f"✅ Main search index '{infilename}' loaded successfully.")
+        print(f"[SUCCESS] Main search index '{infilename}' loaded successfully.")
     else:
-        print(f"⚠️ Could not load main search index from {FaissPath}.")
+        print(f"[FAILED] Could not load main search index from {FaissPath}.")
         
 except Exception as e:
-    print(f"❌ CRITICAL: Failed to load main search index: {e}")
+    print(f"[CRITICAL] Failed to load main search index: {e}")
     g_FaissIndex = None
 
 # Tải dữ liệu 'service' (Categories) để phân loại
@@ -480,12 +480,12 @@ try:
     g_serviceMapChunk = g_serviceData.get("MapChunk")
     
     if g_serviceFaissIndex:
-        print("✅ 'Categories' index loaded successfully.")
+        print("[SUCCESS] 'Categories' index loaded successfully.")
     else:
-        print("⚠️ Could not load 'Categories' index.")
+        print("[FAILED] Could not load 'Categories' index.")
 
 except Exception as e:
-    print(f"❌ CRITICAL: Failed to load 'Categories' index: {e}")
+    print(f"[CRITICAL] Failed to load 'Categories' index: {e}")
     g_serviceFaissIndex = None
 
 

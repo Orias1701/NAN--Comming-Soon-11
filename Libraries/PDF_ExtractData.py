@@ -11,7 +11,7 @@ from . import Common_PdfProcess as PdfProcess
 # ===============================
 class U1_Utils:
 
-    # ===== Hàm tự động thu thập tên riêng =====
+    # ===== Proper Name =====
     @staticmethod
     def collect_proper_names(lines, min_count=10):
         title_words = []
@@ -25,12 +25,12 @@ class U1_Utils:
             # Bỏ qua từ đầu tiên
             for w in words[1:]:
                 if w.istitle():
-                    clean_w = TextProcess.normalize_word(w)
+                    clean_w = TextProcess.normalizeWord(w)
                     if clean_w:
                         title_words.append(clean_w)
 
         counter = Counter(title_words)
-        proper_names = {TextProcess.normalize_word(w) for w, cnt in counter.items() if cnt >= min_count}
+        proper_names = {TextProcess.normalizeWord(w) for w, cnt in counter.items() if cnt >= min_count}
         return proper_names
 
     @staticmethod
@@ -87,13 +87,13 @@ class U1_Utils:
                 roman_markers = []
                 for idx, marker in group:
                     m = re.search(r'\b([IVXLC]+)\b', marker)
-                    if m and TextProcess.is_roman(m.group(1)):
+                    if m and TextProcess.isRoman(m.group(1)):
                         roman_markers.append((idx, m.group(1)))
                     else:
                         break
 
                 if roman_markers:
-                    roman_numbers = [TextProcess.roman_to_int(rm[1]) for rm in roman_markers]
+                    roman_numbers = [TextProcess.romanToInt(rm[1]) for rm in roman_markers]
                     expected = list(range(min(roman_numbers), max(roman_numbers) + 1))
                     if sorted(roman_numbers) != expected:
                         for idx, _ in roman_markers:
@@ -175,10 +175,10 @@ class U3_Line:
         # ===== CaseStyle =====
         cs_values = []
         for w, _ in words:
-            clean_w = TextProcess.normalize_word(w)
+            clean_w = TextProcess.normalizeWord(w)
             if not clean_w:
                 continue
-            if clean_w in exception_texts or TextProcess.is_abbreviation(clean_w):
+            if clean_w in exception_texts or TextProcess.isAbbreviation(clean_w):
                 continue
             cs_values.append(U2_Word.caseStyle(clean_w))
 
@@ -441,15 +441,15 @@ class U8_Cleanup:
         for line in jsonDict.get("lines", []):
             # xử lý Text và MarkerText
             if "Text" in line:
-                line["Text"] = TextProcess.strip_extra_spaces(line["Text"])
+                line["Text"] = TextProcess.stripExtraSpaces(line["Text"])
             if "MarkerText" in line and line["MarkerText"]:
-                line["MarkerText"] = TextProcess.strip_extra_spaces(line["MarkerText"])
+                line["MarkerText"] = TextProcess.stripExtraSpaces(line["MarkerText"])
 
             # xử lý word-level
             words = line.get("Words", {})
             for key in ["First", "Last"]:
                 if key in words and "Text" in words[key]:
-                    words[key]["Text"] = TextProcess.strip_extra_spaces(words[key]["Text"])
+                    words[key]["Text"] = TextProcess.stripExtraSpaces(words[key]["Text"])
         return jsonDict
 
 
@@ -591,7 +591,7 @@ class B1Extractor:
         extractedData = U8_Cleanup.delStatus(cleanJson, ["Coords"])
         extractedData = U8_Cleanup.normalizeFinal(extractedData)
 
-        # ===== 5) Bổ sung proper_names động (giữ nguyên tinh thần) =====
+        # ===== 5) Proper_names =====
         proper_names_auto = U1_Utils.collect_proper_names(
             extractedData["lines"], min_count=self.proper_name_min_count
         )
@@ -599,7 +599,5 @@ class B1Extractor:
             p["text"] if isinstance(p, dict) else str(p)
             for p in self.exceptions.get("proper_names", [])
         ]
-        # Cập nhật vào trạng thái của instance (để chạy nhiều file liên tiếp vẫn tích lũy)
         self.exceptions["proper_names"] = list(set(proper_names_existing) | proper_names_auto)
-
         return extractedData
